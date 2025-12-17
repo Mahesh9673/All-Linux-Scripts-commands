@@ -1,0 +1,1895 @@
+Daily Useful Commands:
+-------------------------------
+
+
+To nullify the files inside the directory from the present location :
+
+            find . -type f -exec sh -c '>"{}"' \;
+
+
+To search bz logs
+ find . -type f -name "*access-ssl.log.20220503*.bz2" -exec bzgrep -i "122.170.13.95" {} \; -print
+
+
+Check applied patches in 11G
+    cd $MW_HOME/utils/bsu/
+    bsu.sh -prod_dir=E:\Oracle\Middleware\wlserver_10.3 -status=applied -verbose -view
+
+
+Print next few lines after grep word in file:
+
+                          cat file.txt | grep -A10 mcb
+
+print above and below lines :
+                          cat /backup1/SBI_MCB1_Logs/log4jInfo.log | grep -a10 SBISQ25190121637146184134
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+set wlst:
+---------
+[webadmin@sbiinbyluatapp1 bin]$ . ./setDomainEnv.sh
+[webadmin@sbiinbyluatapp1 konyadminUAT]$ java weblogic.WLST
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Change weblogic console password :
+===================================
+
+    find . -name middleware
+	
+set Middleware & Domain Home PATH
+
+    export MW_HOME=/Middleware/Oracle/Middleware
+    export DOMAIN_HOME=/Weblogic14c/user_projects/domains/konyadminUAT
+
+Stop WebLogic:
+       $DOMAIN_HOME/bin/stopWebLogic.sh
+	   
+Take data folder backup:	   
+       mv $DOMAIN_HOME/servers/AdminServer/data $DOMAIN_HOME/servers/AdminServer/data-old
+Set Environment:
+       . $DOMAIN_HOME/bin/setDomainEnv.sh
+        cd $DOMAIN_HOME/security
+		
+Take security folder backup:
+        cd ../
+        cp -rp security security_10Dec2025
+
+Go to Security folder & run below command provide new username & password:
+        cd security
+        ls -lrt
+        java weblogic.security.utils.AdminAccount weblogic weblogic123 .
+		
+Add above credentials in Admin server securtiy boot.properties file:
+        cd ../servers/AdminServer/security/
+        vi boot.properties
+		
+Start WebLogic Server:		
+        $DOMAIN_HOME/bin/startWebLogic.sh
+		
+Access console use above credetials for login.
+--------------------------------------------------------------
+
+Decrypt weblogic password using wlst:
+
+ set wlst:
+---------
+[webadmin@sbiinbyluatapp1 bin]$ . ./setDomainEnv.sh
+[webadmin@sbiinbyluatapp1 konyadminUAT]$ java weblogic.WLST
+
+    in wlst prompt:
+                   domain ="/Weblogic14c/user_projects/domains/konyadminUAT"
+                   service = weblogic.security.internal.SerializedSystemIni.getEncryptionService(domain)
+                   encryption = weblogic.security.internal.encryption.ClearOrEncryptedService(service)
+                   print "Weblogic server username is: %s"    %encryption.decrypt("{AES}PxUFcjPgE5Wcki99zhQfGRa24n4paKBGGMWd4TjIjY=")    ---- (remove / )
+                   print "Weblogic server password is: %s"    %encryption.decrypt("{AES}PxUFcjPgE5Wcki99zhQfGRa24n4paKBGGMWd4TjIjY=")
+
+Here you will get decrpted username & password.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+OHS Automation Scripts Start/Stop:
+----------------------------------
+
+domain_home=/OHS12c/user_projects/domains/kony_DEV/bin
+node_log=$domain_home/node_manager.log
+admin_log=$domain_home/admin.log
+
+
+RED='\e[1;31m'
+GREEN='\033[0;32m'
+echo -e "${GREEN} Checking NodeManager is Running or NOT.... ${CLEAR}\e[0m"
+sleep 5
+value=`ps -ef| grep java |grep weblogic.NodeManager |grep -v grep |wc -l`
+if [ $value -eq 1 ]; then
+     echo -e "${GREEN}  NodeManager is Running..... ${CLEAR}\e[0m"
+else
+     echo -e "${RED}  NodeManager is Down..... ${CLEAR}\e[0m"
+     echo -e "\n"
+     echo -e "${GREEN}  Starting Node Manager..... ${CLEAR}\e[0m"
+     nohup $domain_home/startNodeManager.sh > $node_log 2>&1 &
+fi
+sleep 5
+value=`ps -ef| grep java |grep weblogic.NodeManager |grep -v grep |wc -l`
+if [ $value -eq 1 ]; then
+     echo -e "${GREEN}  NodeManager is Running..... ${CLEAR}\e[0m"
+else
+     echo -e "${RED}  NodeManager is Down..... ${CLEAR}\e[0m"
+
+sleep 5
+fi
+
+
+
+echo -e "${GREEN} Stopping the Confs ...............${CLEAR}\e[0m"
+$domain_home/stopComponent.sh devinternet1
+$domain_home/stopComponent.sh devforkony
+
+echo -e "${RED} Successfully Stopped the Confs. ${CLEAR}\e[0m"
+
+echo -e "${GREEN} Stopping Node Manager ....${CLEAR}\e[0m"
+nohup $domain_home/stopNodeManager.sh > $node_log 2>&1 &
+
+echo -e "${RED} Successfully Stopped the Node Manager. ${CLEAR}\e[0m"
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Add crontab: crontab entry :
+------------------------------
+    
+                               vi /etc/cron.allow               (Add user in this file using root user and take crontab service restart)
+                                   webadmin
+                                   root
+
+                          systemctl restart crond.service
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+scp -rp wasadmin@10.189.126.9:/WAS9/IBM/WebSphere/AppServer/profiles/AppSrv01/logs/retailmob9* .
+
+
+for val in retailmob11   retailmob11b  retailmob11d  retailmob11f  retailmob6   retailmob6b  retailmob6d  retailmob6f  retailmob9   retailmob9b  retailmob9d  retailmob9f retailmob11a  retailmob11c  retailmob11e  retailmob11g  retailmob6a  retailmob6c  retailmob6e  retailmob6g  retailmob9a  retailmob9c  retailmob9e  retailmob9g; do  cp -p $val/SystemOut.log /tmp/SystemOut.log_$val; done
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+list files starting with name :
+
+
+                 find . -iname 'log4j*' 
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+List files excluding *2025-1*:-
+================================
+
+
+   find . -maxdepth 1 ! -name "*2025-1*" -printf "%P\\n" | xargs ls -lrt
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+SSL Debug on for WebLogic JVM:
+-----------------------------
+                                  -Djavax.net.debug=all -Dssl.debug=true -Dweblogic.StdoutDebugEnabled=true
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Finds/Search recursively from your current directory
+
+                            grep -rn "scan.sbi.co.in" . --include="*.properties"
+
+                            grep -r "scan.sbi.co.in" --include="*.properties" .
+
+                             grep -rn "scan.sbi.co.in" . --include="*.properties" |grep -v "#"
+
+                            find . -name "*.properties" -print0 | xargs -0 grep "scan.sbi.co.in" |grep -v "#"
+
+            Executes grep on each found file ({}) to list (-l) only the filenames that contain the string.
+
+                            find . -name "*.properties" -exec grep -l "scan.sbi.co.in" {} \;
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+CustomLog to print domain in OHS 
+
+CustomLog "|${PRODUCT_HOME}/bin/rotatelogs /logs/${COMPONENT_NAME}/ssl_request_log.%Y%m%d%H%M%S 28800" "%t %{x-forwarded-for}i LB=%h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b %s %{Host}i \"%{Referer}i\" \"%{User-Agent}i\""                          
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+Change alias & key_pass , store_pass for keystore jks .
+============================================================
+
+keytool -importkeystore -srckeystore [MY_FILE.p12] -srcstoretype pkcs12 -destkeystore [MY_KEYSTORE.jks] -deststoretype jks
+keytool -storepasswd -keystore your_keystore.jks
+keytool -keypasswd -keystore your_keystore.jks -alias your_alias
+
+
+/IHS9/OHS/jdk1.8.0_451/bin/keytool -keypasswd -keystore mobprm.onlinesbi.com.jks  -alias mobprm
+
+
+/IHS9/OHS/jdk1.8.0_451/bin/keytool -changealias -alias mobprm.onlinesbi.com -destalias prmcerts -keystore prm.jks
+
+/IHS9/OHS/jdk1.8.0_451/bin/keytool -storepasswd -keystore prm.jks
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+Want to add some lines on all remote servers from central/ansible server:
+
+cat check
+10.176.56.231
+10.176.56.233
+10.191.157.14
+10.191.157.15
+
+
+
+for i in $(cat check);do ssh -q $i ""echo =================== $i =================";echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDdvDAQ2+Ib9QGg1cuhMlaTN5E/61IxvvEzIw1KVxMHKa1RfVJR/9EokpPkH70hhkIW/zvAx0qkjBIGSzzulw2uRe1cWT/h+oyPje/V/DxAch/z/HBcLxyrmIwmmr2W+secwLLcFt7slTINtS0TRtlBAZk/sFGNDtf4ypQiK9Mw7UICpHkdXQNqe6h+GB8xE0J/E3zQoy3KAX3gg3Ol5kM4qbz6+BAsFQBJrQBiWfCq/ubTKz8jG7cyS9Gvkd1agIFiWUvmI3+ZB2SAT2Tpc7F/fQ7p3TXeDUAeg1IXd2SotexLCXChmkgZsfAY1bAGpd4nDjg4fXeHYhMSYj1IKmPn8Ri/W3Vo27QEoNuQg5fQWTU2ueAjnDEbUxI5MbOLZFdmTiAveVWcGiCM1biNdjWb4MEYmZfxG5t1Fo8HmNwAidxGY+20yDg+cUyuA2SHcEoc7MPP+VDDGJgppi3/AmqKr5TF7VIHKgyBiiKpkKlEBr9BCldF+NeaAzKZHWyRKRE= wasadmin@MOBANSIBLEUAT1" >> .ssh/authorized_keys";done
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Check logs:
+
+for i in 10.191.66.164 10.191.66.165 10.191.66.166 10.191.66.166 10.191.66.167 10.191.66.168 10.191.66.169 ;do  ssh -q wasadmin@$i "echo "================= $i ===============";  grep  -i AshishSaroj /ndlogs/SBIINBYLPRBAPP*/*/*190925*  | grep "2025-09-19" | grep -E '19:[3-6][0-9]|20:[0-9][0-9]' " >> /tmp/`hostname`.txt; done
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+==============================================================================================================================================================
+
+                                       JAVA upgradation using manual script from ansible/central servers.
+
+==============================================================================================================================================================
+
+
+[appadmin@MOBANSIBLEPR01 jdk_upgrade]$ ls -lrt
+total 16
+-rwxrwxrwx 1 wasadmin wasadmin 7390 Oct 17 16:35 script-to-upgardeJava.sh
+-rwxrwxrwx 1 wasadmin wasadmin  323 Oct 17 16:43 runJdkUpgradeFromClient.sh
+-rwxrwxrwx 1 webadmin webadmin  313 Nov  7 23:32 runJdkUpgradeFromClientWeb.sh
+
+================================================================================================
+
+[appadmin@MOBANSIBLEPR01 jdk_upgrade]$ cat runJdkUpgradeFromClient.sh
+#/bin/bash
+echo "Enter the IP of the weblogic server on which you want to upgrade"
+read SERVER_IP
+scp /tmp/jdk_binary/*.gz $SERVER_IP:/tmp
+sleep 5
+echo "Executing script on remote server"
+scp script-to-upgardeJava.sh $SERVER_IP:/Weblogic12c
+ssh $SERVER_IP "/Weblogic12c/script-to-upgardeJava.sh jdk-8u461-linux-x64.tar.gz"
+[appadmin@MOBANSIBLEPR01 jdk_upgrade]$
+[appadmin@MOBANSIBLEPR01 jdk_upgrade]$
+
+=========================================================================
+
+[appadmin@MOBANSIBLEPR01 jdk_upgrade]$ cat script-to-upgardeJava.sh
+#!/usr/bin/bash
+#set -vx;
+TARGET_JAVA=${1};
+NODE_MGR_PROCESS=`ps -ef |grep   weblogic.NodeManager |grep -v "grep" |awk '{print $2}'`
+if [ -z "$NODE_MGR_PROCESS" ]; then
+        echo ""
+        echo "$(tput bold)Hey..! Node Manager on the host is in down state, Please start it then retry $(tput sgr0)"
+        echo ""
+        exit;
+else
+        echo ""
+        echo "$(tput bold)Hey..! Node Manager is in RUNNING...! We will proceed for java upgrade..! $(tput sgr0)"
+        echo ""
+fi
+JAVA_STAGE_LOC=/tmp/
+JAVA_HOME_CURRENT=`ps -ef |grep ${NODE_MGR_PROCESS} |awk '{print $8}' |grep -v 'grep' | rev | cut -d'/' -f3- | rev`
+JAVA_TARGET_LOCATION=`ps -ef |grep  ${NODE_MGR_PROCESS} |awk '{print $8}' |grep -v 'grep' | rev | cut -d'/' -f4- | rev`
+CURRENT_JAVA_VERSION=`ps -ef |grep  ${NODE_MGR_PROCESS} |awk '{print $8}' |grep -v 'grep' | rev | cut -d'/' -f3- | rev |awk -F'/' '{print $NF}'`
+ps -ef |grep weblogic.NodeManager |grep -v grep | pwdx `awk '{print $2}'`|awk '{print $2}'  | rev | cut -d'/' -f2- | rev > DOMAIN_HOME
+DOMAIN_HOME=`cat DOMAIN_HOME`
+ORACLE_HOME=`ps aux | grep "weblogic.NodeManager"  | awk -F "-Dbea.home=" '{print $2}'|awk '{print $1}' | rev | cut -d'/' -f3- | rev | tr -d '\n'`
+stopNodeManager()
+{
+cd $DOMAIN_HOME/bin;
+./stopNodeManager.sh;
+sleep 5;
+}
+
+extractAndPrepareJavaDir()
+{
+        echo "Extracting the JDK on the stage location"
+        sleep 5;
+        cd $JAVA_TARGET_LOCATION/
+        cp /tmp/$TARGET_JAVA .
+        chmod 755 $TARGET_JAVA
+        tar -zxvf $TARGET_JAVA > release.txt
+VER_JAVA_DIR=`grep release release.txt  | cut -d'/' -f1`
+chmod -R 755 $VER_JAVA_DIR;
+echo "Below is the extracted java"
+echo "ls -d $JAVA_TARGET_LOCATION/$VER_JAVA_DIR"
+sleep 1;
+echo ""
+echo "Taking backup of existing cacerts file from $VER_JAVA_DIR"
+echo ""
+sleep 1;
+NEW_CACERTS=`find $JAVA_TARGET_LOCATION/$VER_JAVA_DIR -name cacerts`
+echo "`cp -p ${NEW_CACERTS} ${NEW_CACERTS}_Orig_b4_upgrade`";
+echo "Copying cacerts from $CURRENT_JAVA_VERSION to ${VER_JAVA_DIR}"
+OLD_CACERTS=`find $JAVA_TARGET_LOCATION/$CURRENT_JAVA_VERSION -name cacerts`
+echo "`cp -p $OLD_CACERTS $NEW_CACERTS`"
+}
+updatingDomainOracleHomeFiles()
+{
+echo "Replacing Java version from $CURRENT_JAVA_VERSION to ${VER_JAVA_DIR} in the below files"
+echo "Below ORACLE_HOME $ORACLE_HOME files are updating"
+echo "ng_clone.xml context.xml .globalEnv.properties viewInventory.sh launch.sh setProperty.sh compareInventory.sh"
+sleep 1
+echo "Below DOMAIN_HOME $DOMAIN_HOME files are updating"
+sleep 1
+echo ".bash_profile domain-info.xml nodemanager-properties.xml tokenValue.properties startscript.xml startscript.xml setNMJavaHome.sh setDomainEnv.sh nodemanager.properties"
+cp -p   $ORACLE_HOME/inventory/Clone/ng_clone.xml               $ORACLE_HOME/inventory/Clone/ng_clone.xml_b4_$VER_JAVA_DIR
+cp -p   $ORACLE_HOME/inventory/Components/oracle.wls.core.app.server/12.2.1.4.0/context.xml             $ORACLE_HOME/inventory/Components/oracle.wls.core.app.server/12.2.1.4.0/context.xml_b4_$VER_JAVA_DIR
+cp -p   $ORACLE_HOME/oui/.globalEnv.properties          $ORACLE_HOME/oui/.globalEnv.properties_b4_$VER_JAVA_DIR
+cp -p   $ORACLE_HOME/oui/bin/viewInventory.sh           $ORACLE_HOME/oui/bin/viewInventory.sh_b4_$VER_JAVA_DIR
+cp -p   $ORACLE_HOME/oui/bin/launch.sh          $ORACLE_HOME/oui/bin/launch.sh_b4_$VER_JAVA_DIR
+cp -p   $ORACLE_HOME/oui/bin/setProperty.sh             $ORACLE_HOME/oui/bin/setProperty.sh_b4_$VER_JAVA_DIR
+cp -p   $ORACLE_HOME/oui/bin/compareInventory.sh                $ORACLE_HOME/oui/bin/compareInventory.sh_b4_$VER_JAVA_DIR
+cp -p   $DOMAIN_HOME/init-info/domain-info.xml          $DOMAIN_HOME/init-info/domain-info.xml_b4_$VER_JAVA_DIR
+cp -p   $DOMAIN_HOME/init-info/nodemanager-properties.xml               $DOMAIN_HOME/init-info/nodemanager-properties.xml_b4_$VER_JAVA_DIR
+cp -p   $DOMAIN_HOME/init-info/tokenValue.properties            $DOMAIN_HOME/init-info/tokenValue.properties_b4_$VER_JAVA_DIR
+cp -p   $DOMAIN_HOME/init-info/startscript.xml          $DOMAIN_HOME/init-info/startscript.xml_b4_$VER_JAVA_DIR
+cp -p   $DOMAIN_HOME/bin/setNMJavaHome.sh               $DOMAIN_HOME/bin/setNMJavaHome.sh_b4_$VER_JAVA_DIR
+cp -p   $DOMAIN_HOME/bin/setDomainEnv.sh                $DOMAIN_HOME/bin/setDomainEnv.sh_b4_$VER_JAVA_DIR
+cp -p   $DOMAIN_HOME/nodemanager/nodemanager.properties         $DOMAIN_HOME/nodemanager/nodemanager.properties_b4_$VER_JAVA_DIR
+cp -p   ~/.bash_profile         ~/.bash_profile_b4_$VER_JAVA_DIR
+sleep 1
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $ORACLE_HOME/inventory/Clone/ng_clone.xml
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $ORACLE_HOME/inventory/Components/oracle.wls.core.app.server/12.2.1.4.0/context.xml
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $ORACLE_HOME/oui/.globalEnv.properties
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $ORACLE_HOME/oui/bin/viewInventory.sh
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $ORACLE_HOME/oui/bin/launch.sh
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $ORACLE_HOME/oui/bin/setProperty.sh
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $ORACLE_HOME/oui/bin/compareInventory.sh
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $DOMAIN_HOME/init-info/domain-info.xml
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $DOMAIN_HOME/init-info/nodemanager-properties.xml
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $DOMAIN_HOME/init-info/tokenValue.properties
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $DOMAIN_HOME/init-info/startscript.xml
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $DOMAIN_HOME/bin/setNMJavaHome.sh
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $DOMAIN_HOME/bin/setDomainEnv.sh
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        $DOMAIN_HOME/nodemanager/nodemanager.properties
+sed -i "s/$CURRENT_JAVA_VERSION/$VER_JAVA_DIR/g"        ~/.bash_profile
+
+echo "Validating $VER_JAVA_DIR in files"
+
+grep "$VER_JAVA_DIR"    $ORACLE_HOME/inventory/Clone/ng_clone.xml
+grep "$VER_JAVA_DIR"    $ORACLE_HOME/inventory/Components/oracle.wls.core.app.server/12.2.1.4.0/context.xml
+grep "$VER_JAVA_DIR"    $ORACLE_HOME/oui/.globalEnv.properties
+grep "$VER_JAVA_DIR"    $ORACLE_HOME/oui/bin/viewInventory.sh
+grep "$VER_JAVA_DIR"    $ORACLE_HOME/oui/bin/launch.sh
+grep "$VER_JAVA_DIR"    $ORACLE_HOME/oui/bin/setProperty.sh
+grep "$VER_JAVA_DIR"    $ORACLE_HOME/oui/bin/compareInventory.sh
+grep "$VER_JAVA_DIR"    $DOMAIN_HOME/init-info/domain-info.xml
+grep "$VER_JAVA_DIR"    $DOMAIN_HOME/init-info/nodemanager-properties.xml
+grep "$VER_JAVA_DIR"    $DOMAIN_HOME/init-info/tokenValue.properties
+grep "$VER_JAVA_DIR"    $DOMAIN_HOME/init-info/startscript.xml
+grep "$VER_JAVA_DIR"    $DOMAIN_HOME/bin/setNMJavaHome.sh
+grep "$VER_JAVA_DIR"    $DOMAIN_HOME/bin/setDomainEnv.sh
+grep "$VER_JAVA_DIR"    $DOMAIN_HOME/nodemanager/nodemanager.properties
+grep "$VER_JAVA_DIR"    ~/.bash_profile
+
+echo "zipping the old java"
+tar -zcvf ${CURRENT_JAVA_VERSION}.tar.gz ${CURRENT_JAVA_VERSION}
+ls -ls ${CURRENT_JAVA_VERSION}.tar.gz
+echo "Movinng Old ${CURRENT_JAVA_VERSION} to /tmp location";
+mv  ${CURRENT_JAVA_VERSION} /tmp
+}
+runBashProfileAndRestartNM ()
+{
+source ~/.bash_profile;
+cd $DOMAIN_HOME/bin;
+. ./setDomainEnv.sh;
+cd $DOMAIN_HOME/bin
+nohup ./startNodeManager.sh &
+}
+stopNodeManager;
+extractAndPrepareJavaDir;
+updatingDomainOracleHomeFiles;
+runBashProfileAndRestartNM;
+[appadmin@MOBANSIBLEPR01 jdk_upgrade]$
+
+
+=================================================================================         Completed                  ============================================
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+log4j configuration on app server :
+
+# BEGIN APPENDER: FILE APPENDER (rolling)
+#  first:  type of appender (fully qualified class name)
+log4j.appender.A1=org.apache.log4j.DailyRollingFileAppender
+log4j.appender.A1.File=/ndlogs/sbiiretprda6/securepe2reg6/securepe2reg6.log
+log4j.appender.A1.DatePattern='.'ddMMyy-a
+log4j.appender.A1.layout=org.apache.log4j.PatternLayout
+#log4j.appender.A1.layout.ConversionPattern=%d [%X{userName}] [%X{jSessionId}][%X{url}][%X{requestID}] %-5p [%c:%L] %m%n
+log4j.appender.A1.layout.ConversionPattern=%d [%X{ipAddress}] [%X{userName}][%X{jSessionId}] [%X{url}][%X{requestID}] %-5p [%c:%L] %m%n
+# END APPENDER: FILE APPENDER (rolling)
+
+wasadmin@sbiiretprda6$
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+To apply the patch from ansible server using for:
+
+   for i in 10.176.36.37 10.176.36.51 10.176.36.54 10.176.36.57;do ssh -q $i "hostname -i ; ls -lrt /tmp/p38051795_122140_Linux-x86-64.zip ; ps -ef|grep java ; /OHS12c/Oracle/Middleware/Oracle_Home/OPatch/opatch apply /tmp/p38051795_122140_Linux-x86-64.zip -silent" ; done
+
+
+for i in 10.189.44.181 10.189.44.182 10.176.35.31 10.176.35.32 ;do ssh -q $i "hostname -i;cd /OHS12c/Oracle/Middleware/user_projects/domains/base_domain/bin;./stopComponent.sh api_Auth;./stopComponent.sh sim_Auth;./stopComponent.sh viva;./stopComponent.sh mfa_intra;./stopComponent.sh mfa_int1;./stopComponent.sh mfa_int2;./stopComponent.sh pe2_Auth ";done
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Start Node Manager
+/OHS12c/Oracle/Middleware/Oracle_Home/user_projects/domains/base_domain/bin
+./startNodeManager.sh
+
+Operation On Manage Servers. 
+Connect to NodeManager through wlst.sh
+cd /OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/common/bin
+./wlst.sh
+nmConnect('konyadmin','V@ult$5678','localhost','5556','base_domain','/OHS12c/Oracle/Middleware/Oracle_Home/user_projects/domains/base_domain/','ssl','true')
+
+To start server
+nmStart(serverName='ohs1',serverType='OHS')
+
+To Check server status 
+nmServerStatus(serverName='ohs1',serverType='OHS')
+
+To stop servers 
+nmKill(serverName='ohs1',serverType='OHS')
+=================================================================================================================================================================
+
+Script to Apply WebLogic Patch from Ansible/Central Server:
+--------------------------------------------------------------
+
+#bin/bash
+###############################################3
+#  Script to Apply WebLogic Patch              #
+#           ---- Created by Mahesh Dharmasale  #
+################################################
+
+# === CONFIG ===
+PATCH_DIR="/home/appadmin/scripts/Patches" # Local patch directory
+SERVER_FILE="/home/appadmin/scripts/mahesh/servers.txt"
+LOG_DIR="/home/appadmin/scripts/mahesh/Logs"
+
+# === TIMESTAMP RUN ID ===
+RUN_TS=$(date +"%Y%m%d_%H%M%S")
+
+mkdir -p "$LOG_DIR"
+echo -e "\n"
+read -p "Have you copied patches to $PATCH_DIR (yes/no)? " answer
+if [[ "$answer" != "yes" ]]; then
+   echo "Exiting... Please copy patches to $PATCH_DIR first."
+   exit 1
+fi
+echo -e "\n"
+
+echo -e "Please find list of the patches"
+cd /home/appadmin/scripts/Patches
+ls -lrt
+echo -e "\n"
+
+echo -e "Please provide patch name....   e.g:- patch.zip "
+read $pacth
+echo -e "\n"
+
+echo -e "Please find list of the servers which we are going to apply above patch"
+cat /home/appadmin/scripts/mahesh/servers.txt
+echo -e "\n"
+
+echo -e "Provide Opatch Direcotry Location"
+read ORACLE_HOME
+OPATCH_BIN="$ORACLE_HOME/opatch"
+
+SUMMARY_FILE="$LOG_DIR/patch_summary_${RUN_TS}.txt"
+echo "Patch Summary Report - $(date)" > "$SUMMARY_FILE"
+echo "----------------------------------------" >> "$SUMMARY_FILE"
+
+while read server
+do
+    [[ -z "$server" ]] && continue
+
+    LOG_FILE="$LOG_DIR/${server}_${RUN_TS}.log"
+    REMOTE_PATCH_DIR="/tmp/mahesh_d_$RUN_TS"
+
+    echo ">>> Processing $server ... Logs: $LOG_FILE"
+    {
+        echo "===== Starting patching on $server at $(date) ====="
+
+        echo "Creating remote patch dir on $server..."
+        ssh -q "$server" "mkdir -p $REMOTE_PATCH_DIR"
+
+        echo "Copying patches to $server..."
+        scp -rp "$PATCH_DIR"/$pacth "$server:$REMOTE_PATCH_DIR/"
+
+        echo "Checking and killing Java processes on $server..."
+        ssh -q "$server" "pgrep java && pkill java || echo 'No Java process running'"
+
+        echo "Applying WebLogic patch on $server..."
+        ssh -q "$server" "$OPATCH_BIN apply $REMOTE_PATCH_DIR/*.zip -silent"
+        if [ $? -ne 0 ]; then
+            echo "Patch failed on $server at $(date)"
+            echo "===== Completed with FAILURE on $server ====="
+            echo "$server : FAIL" >> "$SUMMARY_FILE"
+            continue
+        fi
+
+        echo "===== Completed patching successfully on $server at $(date) ====="
+        echo "$server : SUCCESS" >> "$SUMMARY_FILE"
+    } | tee "$LOG_FILE"
+
+done < "$SERVER_FILE"
+
+echo ">>> All patching completed!"
+echo ">>> Summary Report:"
+cat "$SUMMARY_FILE"
+echo ">>> Detailed logs are saved in $LOG_DIR"
+
+
+
+
+
+=================================================================================================================================================================
+Log Archive script:
+------
+#!/usr/bin/bash
+#set -vx;
+PASSWORD=`date -d '-1 day' '+%Y%m%d'`
+for val in SBI_ACL_Logs SBI_MCB1_Logs  SBI_MCB2_Logs  SBI_PMJJYREG_Logs  SBI_VIVA2_Logs  SBI_VIVA_Logs
+do
+	cd /backup1/${val};
+	ls -l |grep -v zip |awk '{print $9}' |egrep -E 'log4jError.log.20|log4jInfo.log.20' > Files_List
+	while IFS= read -r line; 
+		do 
+			zip -P ${PASSWORD} -m ${line}.zip ${line}; 
+	done < Files_List
+	rm Files_List
+done
+
+==========================================================================================================================================================================================================
+Find command:
+find any filename with *:
+       find . -type f -name "*conf*"
+       find . -name "*WAP*.jar" -exec ls -lrt {} \;
+
+find a data present inside file using find keyword:
+       find . -type f -exec grep SSL {} \; -print | grep -v ^#
+			
+Find last 5 min before updated any file using find command:
+         
+         find  -type f -mmin -5        ------->(last 5 min ago updated file)
+
+         find  -type f -mmin -5 -name "*ssl*"         ------->(last 5 min ago updated file name with ssl)
+
+         find  -type f -mmin -5 -exec grep "10.189.250.150" {} \; -print             ------->(last 5 min ago updated file with value "10.189.250.150" )
+
+         find /ndlogs/`hostname` -type f -mmin -30 -exec grep "MQ Error code" {} \; -print
+
+==========================================================================================================================================================================================================
+( 
+To find the logs for retail user with spacific context root:
+
+               for i in `find /retailarchive/retail_app/Jun_2023/sbiiretprda*/sbsecureviva/020623 -name "*020623*" -type f`; do echo $i; bzcat $i | grep -i "monavatsia1" ; done
+
+To find the logs for retail user for all context root:
+
+               for i in `find /retailarchive/retail_app/Jun_2023 -name "*020623*" -type f`; do echo $i; bzcat $i | grep -i "monavatsia1" ; done
+
+               for i in `find /retailarchive/retail_app/Jul_2019 -name "*180719*" -type f`; do echo $i; bzcat $i | grep -i "karthikrkp" ; done
+
+New location on IP 10.189.128.12
+           for i in `find /retail_logarchive_2024/retail_app/Apr_2024 -name "*180719*" -type f`; do echo $i; bzcat $i | grep -i "karthikrkp" ; done
+
+find in .zip file:
+        for i in `find /mobilitylogs/ndlogs/Feb_2025/sbiimobdra1*/*/160225/ -name "*160225-PM*" -type f` ; do echo $i;gunzip -c $i | grep -i "108341priya" ; done
+ 
+==========================================================================================================================================================================================================
+To Add certifiactes in wallet OHS:
+------------------------------
+
+/OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet add -wallet /OHS12c/Oracle/Middleware/user_projects/domains/base_domain/config/fmwconfig/components/OHS/instances/viva/mobilewallet -trusted_cert -cert /tmp/api
+.stp.yonobusinessmobile.sbi.crt -pwd 'V@ult$5678'
+  627  /OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet add -wallet /OHS12c/Oracle/Middleware/user_projects/domains/base_domain/config/fmwconfig/components/OHS/instances/viva/mobilewallet -trusted_cert -cert /tmp/api
+.stp.yonobusinessmobile.sbi.crt -pwd V@ult$5678
+  628   /OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet display  -wallet "/OHS12c/Oracle/Middleware/user_projects/domains/base_domain/config/fmwconfig/components/OHS/instances/viva/mobilewallet"
+  635   /OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet display  -wallet "/OHS12c/Oracle/Middleware/user_projects/domains/base_domain/config/fmwconfig/components/OHS/instances/viva/mobilewallet"
+  641  /OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet add -wallet /OHS12c/Oracle/Middleware/user_projects/domains/base_domain/config/fmwconfig/components/OHS/instances/viva/mobilewallet -trusted_cert -cert /tmp/roo
+t.crt -pwd V@ult$5678
+  642  /OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet add -wallet /OHS12c/Oracle/Middleware/user_projects/domains/base_domain/config/fmwconfig/components/OHS/instances/viva/mobilewallet -trusted_cert -cert /tmp/int
+er.cer -pwd V@ult$5678
+  643   /OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet display  -wallet "/OHS12c/Oracle/Middleware/user_projects/domains/base_domain/config/fmwconfig/components/OHS/instances/viva/mobilewallet"
+  676  /OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet display -wallet /OHS12c/Oracle/Middleware/user_projects/domains/base_domain/config/fmwconfig/components/OHS/instances/viva/mobilewallet
+==========================================================================================================================================================================================================
+check certificate:
+       /OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/jdk/jre/bin/keytool -printcert -file api.stp.yonobusinessmobile.sbi.crt
+       keytool -printcert -file  /opt/IBM/WebSphere/AppServer/profiles/jks/yonobusiness_sbi.cer
+	  
+==========================================================================================================================================================================================================	  
+create wallet :
+-------------------
+/OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet create -wallet mobilewallet -pwd V@ult$5678 -auto_login
+
+
+add cert & convert jks_to_pkcs12:
+--------------------------------------
+
+/OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet jks_to_pkcs12 -wallet /tmp/24Apr2025/mobilewallet -pwd V@ult$5678 -keystore /tmp/24Apr2025/uat.whatsappmobility.sbi.jks -jkspwd adminsbi123
+
+Display Wallet:
+-----------------
+/OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet display -wallet "/OHS12c/Oracle/Middleware/user_projects/domains/base_domain/mobilewallet"
+
+check validity
+-------------
+/OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet export -wallet "/OHS12c/Oracle/Middleware/user_projects/domains/base_domain/mobilewallet" -dn 'CN=uat.whatsappmobility.sbi,O=STATE BANK OF INDIA,L=Navi Mumbai,ST=Maharashtra,C=IN,SERIALNUMBER=Government Entity,2.5.4.15=Government Entity,1.3.6.1.4.1.311.60.2.1.3=IN' -cert /tmp/bkp_24Apr2025.txt
+
+
+   openssl x509 -in /tmp/bkp_24Apr2025.txt -text -noout
+
+   openssl s_client  -showcerts  -connect 10.191.68.55:7002 | openssl x509 -text
+
+Command to check check expiry date using openssl tool
+       echo | openssl s_client -servername etoll.hellobankbank.com -connect etoll.hellobankbank.com:443 2>/dev/null | openssl x509 -noout -dates
+
+ To check validity of domain for kdb extension file.
+ --------------------------------------------------
+
+ /IHS9/IBM/HTTPServer/bin/gskcmd -cert -list -db /IHS9/IBM/CERT_TOOL/DOMAIN/uatmobilityquick1.sbi/SG00708681_05-Mar-2025-16-30/uatmobilityquick1.sbi.kdb -pw adminsbi123 -expiry
+ 
+==========================================================================================================================================================================================================
+Create component in OHS:
+
+        readDomain('/OHS12c/user_projects/domains/konyPROD')
+        cd('/')
+        create('internet1_DM1', 'SystemComponent')
+        cd('/SystemComponent/internet1_DM1')
+        cmo.setComponentType('OHS')
+        set('Machine', 'localmachine')
+        cd('/OHS/internet1_DM1')
+        cmo.setAdminHost('127.0.0.1')
+        cmo.setAdminPort('7444')
+        cmo.setListenAddress('10.176.35.241')
+        cmo.setListenPort('7445')
+        cmo.setSSLListenPort('9443')
+        cmo.setServerName('http://10.176.35.241:7445')
+        updateDomain()
+        exit()
+==========================================================================================================================================================================================================
+
+To fetch public Key from jks:
+             keytool -exportcert -alias api.stp.yonobusinessmobile.sbi -keystore api.stp.yonobusinessmobile.sbi.jks -file /tmp/24Jun2025.pem -rfc
+             cat /tmp/24Jun2025.pem
+             openssl x509 -in /tmp/24Jun2025.pem -pubkey -noout > /tmp/pub_key.pem
+             cat /tmp/pub_key.pem
+
+==========================================================================================================================================================================================================
+
+
+
+wlst script:
+
+12c:
+
+with open("/Middleware/infra_scripts/onboot_scripts/jvm.txt") as f:
+    servers = [line.strip() for line in f if line.strip()]
+    print(servers)
+
+
+14c:
+try:
+    f = open("/Middleware/infra_scripts/onboot_scripts/jvm.txt")
+	servers = []
+	
+	for line in f:
+	    line = line.strip()
+		if line:
+		     servers.append(line)
+			 
+			 
+finally:
+        try:
+		    f.close()
+		except:
+		    pass
+print servers
+
+
+
+==========================================================================================================================================================================================================
+Apply pacthes,Fixpack & Ifixes on Websphere WAS IHS:
+
+App Server:
+
+
+mkdir -p /tmp/18Sep2025;
+cp -rp /opt/IBM/WebSphere/AppServer/java/8.0/jre/lib/security/cacerts /tmp/18Sep2025/;
+ls -lrt /tmp/18Sep2025/;
+cd /opt/IBM/WebSphere/AppServer/;
+nohup tar -cvzf java_18Sep2025.tar.gz java &
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl listAvailablePackages -repositories /MOBLOGS_DR/Software/JAVA_FP8.0.8.50/;
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl install com.ibm.java.jdk.v8_8.0.8050.20250703_0834  -repositories /MOBLOGS_DR/Software/JAVA_FP8.0.8.50/ -installationDirectory /opt/IBM/WebSphere/AppServer -acceptLicense -sP;
+sudo chown -R wasadmin:was /opt/IBM/;
+chmod -R 755 /opt/IBM/;
+ls -lrt /opt/IBM/WebSphere/AppServer/java/8.0/jre/lib/security/cacerts;
+cp -rp /tmp/18Sep2025/cacerts /opt/IBM/WebSphere/AppServer/java/8.0/jre/lib/security/;
+ls -lrt /opt/IBM/WebSphere/AppServer/java/8.0/jre/lib/security/cacerts;
+cd /opt/IBM/WebSphere/AppServer/profiles/Dmgr01/bin;
+./backupConfig.sh;
+cd /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/bin;
+./backupConfig.sh;
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl install com.ibm.websphere.ND.v90_9.0.5024.20250528_1830  -repositories /MOBLOGS_DR/Software/FP_24/WAS/ -installationDirectory /opt/IBM/WebSphere/AppServer -acceptLicense -sP;
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl install 9.0.5.15-WS-WAS-IFPH66674_9.0.5015.20250625_0931 -repositories /MOBLOGS_DR/Software/FP_24/WAS/IFPH66674 -installationDirectory /opt/IBM/WebSphere/AppServer/ -acceptLicense -sP;
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl install 9.0.5.11-WS-WAS-IFPH64683_9.0.5011.20250713_0813 -repositories /MOBLOGS_DR/Software/FP_24/WAS/IFPH64683 -installationDirectory /opt/IBM/WebSphere/AppServer/ -acceptLicense -sP;
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl install 9.0.5.23-WS-WAS-IFPH67137_9.0.5023.20250808_0049 -repositories /MOBLOGS_DR/Software/FP_24/WAS/IFPH67137 -installationDirectory /opt/IBM/WebSphere/AppServer/ -acceptLicense -sP;
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl install 9.0.5.20-WS-WAS-IFPH67120_9.0.5020.20250710_1741 -repositories /MOBLOGS_DR/Software/FP_24/WAS/IFPH67120 -installationDirectory /opt/IBM/WebSphere/AppServer/ -acceptLicense -sP;
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl install 9.0.5.24-WS-WAS-IFPH66167_9.0.5024.20250808_2121 -repositories /MOBLOGS_DR/Software/FP_24/WAS/IFPH66167 -installationDirectory /opt/IBM/WebSphere/AppServer/ -acceptLicense -sP
+
+
+
+
+Web Server:
+
+mkdir -p /tmp/HTTPServer_CA;
+mkdir -p /tmp/Plugin_CA;
+cp -rp /opt/IBM/HTTPServer/java/8.0/jre/lib/security/cacerts /tmp/HTTPServer_CA;
+cp -rp /opt/IBM/WebSphere/Plugins/java/8.0/jre/lib/security/cacerts /tmp/Plugin_CA;
+ls -lrt /tmp/HTTPServer_CA;
+ls -lrt /tmp/Plugin_CA;
+cd /opt/IBM/HTTPServer/;
+nohup tar -cvzf java_18Sep2025.tar.gz java/ &
+cd ../WebSphere/Plugins/;
+nohup tar -cvzf java_18Sep2025.tar.gz java/ &
+sleep 20;
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl listAvailablePackages -repositories /MOBLOGS_DR/Software/JAVA_FP8.0.8.50/;
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl install com.ibm.java.jdk.v8_8.0.8050.20250703_0834 -repositories /MOBLOGS_DR/Software/JAVA_FP8.0.8.50/ -installationDirectory /opt/IBM/HTTPServer/ -acceptLicense -sP;
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl install com.ibm.java.jdk.v8_8.0.8050.20250703_0834 -repositories /MOBLOGS_DR/Software/JAVA_FP8.0.8.50/ -installationDirectory /opt/IBM/WebSphere/Plugins/ -acceptLicense -sP;
+sudo chown -R wasadmin:wasadmin /opt/IBM/;
+chmod -R 755 /opt/IBM/;
+ls -lrt /opt/IBM/WebSphere/Plugins/java/8.0/jre/lib/security/cacerts;
+ls -lrt /opt/IBM/HTTPServer/java/8.0/jre/lib/security/cacerts;
+cp -rp /tmp/Plugin_CA/cacerts /opt/IBM/WebSphere/Plugins/java/8.0/jre/lib/security/;
+cp -rp /tmp/HTTPServer_CA/cacerts /opt/IBM/HTTPServer/java/8.0/jre/lib/security/;
+ls -lrt /opt/IBM/HTTPServer/java/8.0/jre/lib/security/cacerts;
+ls -lrt /opt/IBM/WebSphere/Plugins/java/8.0/jre/lib/security/cacerts;
+/opt/IBM/WebSphere/Plugins/bin/versionInfo.sh;ip r;date
+/opt/IBM/HTTPServer/bin/versionInfo.sh;ip r;date
+
+
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl listAvailablePackages -repositories /MOBLOGS_DR/Software/FP_24/IHS/;
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl install com.ibm.websphere.IHS.v90_9.0.5024.20250528_1830  -repositories /MOBLOGS_DR/Software/FP_24/IHS/ -installationDirectory /opt/IBM/HTTPServer/ -acceptLicense -sP;
+sudo /opt/IBM/InstallationManager/eclipse/tools/imcl install com.ibm.websphere.PLG.v90_9.0.5024.20250528_1830  -repositories /MOBLOGS_DR/Software/FP_24/IHS/ -installationDirectory /opt/IBM/WebSphere/Plugins/ -acceptLicense -sP
+==========================================================================================================================================================================================================
+To check URL using curl from OHS WebLogic:
+     from Web:(web-10.189.250.150, App-10.191.64.96)
+                             curl -klv https://10.189.250.150:9443/whatsapp-banking 
+			                 curl -klv https://10.191.64.96:9003/whatsapp-banking
+							 
+==========================================================================================================================================================================================================
+Find/grep multiple words from a file:(egrep)
+                 curl -kv https://ib.sbiintouch.in:7900 2>&1 | egrep -i 'Connected|HTTP|time'			
+
+==========================================================================================================================================================================================================
+
+openssl s_client -connect eispri.sbi.co.in:443
+
+https://iib.sbi.co.in:7085
+
+
+
+Fetch certificate from domain(URL)
+---------------------------------
+openssl s_client -connect {domain_name}:port
+E.g   openssl s_client -connect eispri.sbi.co.in:443
+      openssl s_client -connect  penapp1.pension.sbi:8884
+	  
+	  check certificate validity :-
+using above command we can fetch certificate save in file and  from domain save in file andimport in cacert.(if we are observing error releted to certificate for that domain)
+
+keytool -import -alias {alias_name} -file {certificate_path} -keystore cacerts -storepass {password}
+E.g      keytool -import -alias crm_feb2025 -file /MOBLOGS_DR/iibprod_public.cer -keystore /home/appadmin/java/jdk1.8.0_351/jre/lib/security/cacerts -storepass changeit
+
+verify using keytool:
+
+keytool -list -v -keystore /Weblogic12c/jdk1.8.0_371/jre/lib/security/cacerts -storepass changeit -alias crm_feb2025
+  
+take restart jvm/jars.
+
+-------------------------------------------------------------------------------
+using keytool
+
+keytool -list -v -keystore /Weblogic12c/jdk1.8.0_371/jre/lib/security/cacerts -storepass changeit  |grep .sbi
+
+fetch cert using alias:-
+
+keytool -list -v -keystore /Weblogic12c/jdk1.8.0_371/jre/lib/security/cacerts -storepass changeit -alias whatsapp.sbi
+
+------------------------------------------------------------------------------
+check certificate validity using curl
+
+curl -klv https://eispri.sbi.co.in:443
+
+check url working or not:-
+from Web:
+curl -klv https://10.176.36.37:9443/whatsapp-banking-reg/welcome
+curl -klv https://10.176.36.37:9443/whatsapp-banking/  (here we can find certificate domain expiry & request status ("< HTTP/1.1 200 OK")
+<h1>This is My Landing Page. </h1>
+
+From App:
+curl -klv https://10.176.64.164:9003/whatsapp-banking/
+curl -klv https://10.176.64.164:9004/whatsapp-banking-reg/welcome
+------------------------------------------------------------------------------------------------------------------------
+Export Certificate:
+
+List the certificates inside a keystore to get the alias
+keytool -list -v -keystore KEYSTORE.jks
+
+keytool -exportcert -keystore [keystore] -alias [alias] -file [cert_file.cer]
+
+keytool -export -alias teiid -keystore server.keystore -rfc -file public.cert
+
+# Export the private key and certificate as a PEM file without a password
+openssl pkcs12 -nodes -in "$base_name.p12" -out "$base_name.pem" -passin pass:"$temp_password"
+
+# Export the certificate as a PEM file
+openssl pkcs12 -nokeys -in "$base_name.p12" -out "$base_name.crt" -passin pass:"$temp_password"
+
+# Export the private key as a PEM file
+openssl pkcs12 -nocerts -nodes -in "$base_name.p12" -out "$base_name.key" -passin pass:"$temp_password"
+---------------------------------------------------------------
+Remove entries/ alias 
+
+keytool delete command to remove them:-
+      keytool -delete -alias <alias_name> -keystore <keystore_name>
+Example
+       keytool -delete -alias ac_csr -keystore ac_csr.keystore
+
+
+------------------------------------------------------------------------------------------------------------------------
+check conectivity
+
+nc -zv 10.176.105.13 22
+
+curl -klv telnet://10.176.105.13:22
+-----------------------------------------------------------------------------------------------------------------------
+find command:
+
+find . -type f -name *.xml* (it will check from present location)
+find /App -type f -name *.xml* (to check in particular mountpoint)
+cksum `find . -type f -name *.xml` |grep -v backup    (cksum all .xml to sync files DC DR)
+find . -type f -exec grep 'scan.sbi.co.in' {} \; -print | grep -v ^#  (search particular string/word in files) 
+
+==========================================================================================================================================================================================================
+The below command will allow Apache server to use all ciphers except null, Diffie- Hellman, and other low strengths cipher.
+APACHE:
+For disallowing particular ciphers, we have to go by specific cipher names:
+Edit 'mod_ssl',
+SSLCipherSuite ALL:!EXP:!NULL:!ADH:!LOW
+==========================================================================================================================================================================================================
+KiLL OHS using wlst script(kill OHS faster way):
+login using webadmin
+/OHS//Oracle_Home/ohs/common/bin/wlst.sh
+nmConnect(domainName='OHS_DOMAIN',username='OHSNode',password='hellobank@123')
+nmKill(serverName='ohs1', serverType='OHS')
+nmStart(serverName='ohs1', serverType='OHS')
+nmServerStatus(serverName='ohs1', serverType='OHS')
+==========================================================================================================================================================================================================
+replace a word in file using perl:
+                 perl -pi -e "s/12.2.1.3/12.2.1.4/g" domain-info.xml
+Delete a line containing pattern 
+                 perl -ni.bak -e "print unless /pattern/" fil
+
+==========================================================================================================================================================================================================
+Passwordless configuration in Unix
+#############################################
+On client
+From oracle@DCSANOVWEBUTR1  to webadmin@DCSANOVWEBUTR1
+[oracle@DCSANOVWEBUTR1 ~]$  ssh-keygen -t rsa
+[oracle@DCSANOVWEBUTR1 ~]$ ssh-copy-id webadmin@172.19.36.90
+
+On remote
+[webadmin@DCSANOVWEBUTR1 ~]$ chmod 700 .ssh; chmod 640 .ssh/authorized_keys
+chmod 755 .
+==========================================================================================================================================================================================================
+a. Take cacerts backup
+keytool -import -trustcacerts -keystore /middleware12c/jdk1.8.0_181/jre/lib/security/cacerts -storepass changeit -alias 347_P_certificate -import -file /home/oracle/NPCI_certs/347_P_certificate.cer;
+keytool -import -trustcacerts -keystore /middleware12c/jdk1.8.0_181/jre/lib/security/cacerts -storepass changeit -alias Root_certificate -import -file /home/oracle/NPCI_certs/Root_certificate.cer;
+keytool -import -trustcacerts -keystore /middleware12c/jdk1.8.0_181/jre/lib/security/cacerts -storepass changeit -alias CA_certificate -import -file /home/oracle/NPCI_certs/CA_certificate.cer;
+
+keytool -import -trustcacerts -keystore /middleware12c/jdk1.8.0_181/jre/lib/security/cacerts -storepass changeit -alias 877_P_certificate -import -file /home/oracle/NPCI_certs/877_P_certificate.cer;
+==========================================================================================================================================================================================================
+To desable trace on webserver
+1. Uncomment following module
+              LoadModule rewrite_module modules/mod_rewrite.so
+
+2. Add following files in a http.conf file ater document root tag </Directory>
+
+             RewriteEngine on
+             RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK)
+             RewriteRule .* - [F]
+
+==========================================================================================================================================================================================================
+Keytool crt generation
+keytool -delete -alias mydomain -keystore keystore.jks
+keytool -import -alias DMSODPreprod.hellobankbank.com -file /weblogicdomain/DMSPROD/SSL/DMSODCSR10.5.8.48/DMSODCSR/certchain.p7b  -keystore /weblogicdomain/DMSPROD/SSL/DMSODkeystore.jks -storepass hellobank1234
+keytool -genkey -alias  API.hellobankBANK.COM -keysize 2048 -keypass "hellobank1234" -storepass "hellobank1234" -validity 1000 -keyalg RSA -keystore /opt/tibco/asg/NEW_SSL/api.jks
+keytool -certreq -keyalg RSA -alias API.hellobankBANK.COM -file /opt/tibco/asg/NEW_SSL/API.csr -keystore /opt/tibco/asg/NEW_SSL/api.jks
+
+==========================================================================================================================================================================================================
+Commands to get server details please add in LL:
+-----------------------------------------------
+oracle@BACKBOAPP014:/middleware:~ 12cR2/Oracle_Home/wlserver/common/bin/wlst.sh
+
+connect('weblogic','I4fc_Mpr@0110','t3://10.1.79.61:7111')
+WARNING: This is a deprecated script. Please invoke the wlst.sh script under oracle_common/common/bin.
+
+Initializing WebLogic Scripting Tool (WLST) ...
+
+Jython scans all the jar files it can find at first startup. Depending on the system, this process may take a few minutes to complete, and WLST may not return a prompt right away.
+
+Welcome to WebLogic Server Administration Scripting Shell
+
+Type help() for help on available commands
+
+wls:/offline> connect()
+connect()
+Please enter your username :weblogic
+weblogic
+Please enter your password :
+Please enter your server URL [t3://localhost:7001] :t3://10.5.4.14:7001
+t3://10.5.4.14:7001
+Connecting to t3://10.5.4.14:7001 with userid weblogic ...
+Successfully connected to Admin Server "AdminServer" that belongs to domain "BACKBASE_UAT".
+
+Warning: An insecure protocol was used to connect to the server.
+To ensure on-the-wire security, the SSL port or Admin port should be used instead.
+
+wls:/BACKBASE_UAT/serverConfig/> cd('Servers')
+cd('Servers')
+wls:/BACKBASE_UAT/serverConfig/Servers> cd ('Portal_01')
+cd ('Portal_01')
+wls:/BACKBASE_UAT/serverConfig/Servers/Portal_01> ls ()
+ls ()
+==========================================================================================================================================================================================================
+netstat commands:
+          netstat -anlp |grep httpd  |grep ESTABLISHED
+          netstat -anlp |grep httpd  |grep ESTABLISHED |wc -l
+          netstat -anlp |grep httpd  |grep -i wait |wc -l
+          netstat -anlp |grep httpd  |grep -i wait
+          netstat -anlp |grep httpd  |grep ESTABLISHED |wc -l
+          netstat -an | grep httpd
+          netstat -anlp |grep httpd
+check connectivity:
+  nc -zv 10.5.5.228 1653
+==========================================================================================================================================================================================================
+export Java_options
+If you see below error
+
+Hi Team,Kindly note these below points
+after upgradation if deployments went into failed state in logs check if below errors are there
+
+weblogic.utils.ErrorCollectionException: [java] WLST-WLS-1529953358794: [java] WLST-WLS-1529953358794: There are 2 nested errors: [java] WLST-WLS-1529953358794: [java] WLST-WLS-1529953358794: weblogic.application.ModuleException: java.lang.NullPointerException
+
+
+if this error is there need to add below error in setdomainenv.sh
+
+JAVA_OPTIONS="${JAVA_OPTIONS} -DANTLR_USE_DIRECT_CLASS_LOADING=true"
+
+==========================================================================================================================================================================================================
+Import enttrust certs in jks
+
+[oracle@DCSANOVWEBUTR1 APIM]$
+keytool -import -trustcacerts -alias Intermediate -keystore Apim.jks -file Intermediate.crt
+keytool -import -trustcacerts -alias Root -keystore Apim.jks -file Root.crt.txt
+keytool -importcert -file ServerCertificate.crt -keystore Apim.jks -alias "apim.hellobankfirstbank.com"
+
+
+
+
+keytool -import -trustcacerts -keystore file_name.jks -storepass XXXXXXX -noprompt -alias rootcacert hellobankAD.cer
+keytool -importcert -file Base64.cer -keystore DSBPROD_Trust.jks -alias "dsbprod.hellobankbank.com" -storepass hellobank1234
+keytool -importcert -file CertificateChain.p7b -keystore DSBPROD.jks -alias "dsbprod.hellobankbank.com" -storepass hellobank1234
+
+Certificate reply was installed in keystore
+
+
+keytool -import -trustcacerts -alias intermediate -file /u01/app/oracle/Middleware/user_projects/domains/OAM_Domain/SSL/certificates/certchain.cer -keystore ssouat.jks
+
+keytool -import -trustcacerts -alias root -file /u01/app/oracle/Middleware/user_projects/domains/OAM_Domain/SSL/certificates/Root.cer -keystore ssouat.jks
+
+keytool -import -trustcacerts -alias mydomain -file /u01/app/oracle/Middleware/user_projects/domains/OAM_Domain/SSL/certificates/base64_encoded.cer -keystore  ssouat.jks
+12:44 PM
+
+keytool -import -trustcacerts -alias servercert -file /u01/app/oracle/Middleware/user_projects/domains/OAM_Domain/SSL/certificates/base64_encoded.cer -keystore  ssouat_Trust.jks
+
+#######################################################
+          Weblogic Cert step
+keytool -genkey -alias Tradeuatapp107.hellobankbank.com -keysize 2048 -keyalg RSA -sigalg SHA256withRSA -validity 3650  -keystore /middleware/SSL/tradeuatapp107.jks -keypass "hellobank1234" -storepass "hellobank1234"
+keytool -certreq -keyalg RSA -alias Tradeuatapp107.hellobankbank.com -file /middleware/SSL/tradeuatapp107.txt -keystore /middleware/SSL/tradeuatapp107.jks
+keytool -import -alias Tradeuatapp107.hellobankbank.com -file /middleware/SSL/tradeuatapp107/CertificateChain.p7b  -keystore /middleware/SSL/tradeuatapp107.jks -storepass hellobank1234
+keytool -import -trustcacerts -file /middleware/SSL/tradeuatapp107/DERencoded.cer -alias rootcacert -keystore /middleware/SSL/tradeuatapp107_Trust.jks -storepass hellobank1234
+#######################################################
+keytool for tomcat.
+
+oracle@DCSANOVWEBUTR1 asbapreprod.hellobankbank.com]$ keytool -genkey -alias asbapreprod.hellobankbank.com -keyalg RSA -keysize 2048 -keypass "hellobank1234" -storepass "hellobank1234" -validity 1000   -keystore AsbaPreprod.jks -dname "CN=asbapreprod.hellobankbank.com, OU=IT, O=hellobankBANK, L=MUM, ST=MH, C=IN" -ext SAN=dns:asbapreprod.hellobankbank.com
+
+Warning:
+The JKS keystore uses a proprietary format. It is recommended to migrate to PKCS12 which is an industry standard format using "keytool -importkeystore -srckeystore AsbaPreprod.jks -destkeystore AsbaPreprod.jks -deststoretype pkcs12".
+[oracle@DCSANOVWEBUTR1 asbapreprod.hellobankbank.com]$ ls -arlt
+total 24
+drwxr-xr-x. 298 oracle oinstall 16384 Jul  9 15:35 ..
+-rw-r-----    1 oracle oinstall  2297 Jul  9 16:32 AsbaPreprod.jks
+drwxr-x---    2 oracle oinstall  4096 Jul  9 16:32 .
+[oracle@DCSANOVWEBUTR1 asbapreprod.hellobankbank.com]$ keytool -certreq -keyalg RSA -alias asbapreprod.hellobankbank.com -file AsbaPreprod.csr -keystore AsbaPreprod.jks -ext SAN=dns:asbapreprod.hellobankbank.com
+Enter keystore password:
+
+Warning:
+The JKS keystore uses a proprietary format. It is recommended to migrate to PKCS12 which is an industry standard format using "keytool -importkeystore -srckeystore AsbaPreprod.jks -destkeystore AsbaPreprod.jks -deststoretype pkcs12".
+[oracle@DCSANOVWEBUTR1 asbapreprod.hellobankbank.com]$ ls -arlt
+
+==========================================================================================================================================================================================================
+LoadModule status_module "${PRODUCT_HOME}/modules/mod_status.so"
+
+<Location /server-status>
+    SetHandler server-status
+    Order deny,allow
+    Deny from all
+    Allow from 192.168.8.85
+</Location>
+==========================================================================================================================================================================================================
+Steps to replace certificate without creating wallet. ##########################
+################################################################################
+https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=30865620428990&id=2346727.1&_afrWindowMode=0&_adf.ctrl-state=1an1do1c5e_4
+
+Create CSR with the help of existing certificate details. 
+openssl req -new -newkey rsa:2048 -nodes -keyout samadhaan_onlinesbi_com.key -out samadhaan_onlinesbi_com.csr
+
+Create pem file with all certificates 
+
+cat samadhaan_onlinesbi_co1.txt > samadhaan.pem
+cat Inter.txt >> samadhaan.pem
+cat root.txt >> samadhaan.pem
+cat samadhaan.pem
+
+Export p12
+openssl pkcs12 -export -out samadhaan.onlinesbi.com.p12 -inkey samadhaan_onlinesbi_com.key -in samadhaan.pem
+Export p12 with no certs 
+openssl pkcs12 -in samadhaan.onlinesbi.com.p12 -out samadhaan.key -nocerts
+	
+Merge 
+DigiCertGlobalRootG2.txt >> chain.crt 
+DigiCert_EV_RSA_CA_G2.txt >> chain.crt 
+samadhaan_onlinesbi_co1.txt >> chain.crt
+
+openssl pkcs12 -export -out samadhaan.onlinesbi.com.p12 -inkey privatekey.key -in samadhaan_onlinesbi_co1.cer -certfile chain.crt	
+Put _p_ samadhaan@123
+
+keytool -v -importkeystore -srckeystore samadhaan.onlinesbi.com.p12 -srcstoretype PKCS12 -destkeystore keystore.jks -deststoretype JKS
+
+keytool -importcert -alias root -file Root.cer -keystore keystore.jks -storepass samadhaan@123
+
+keytool -importcert -alias inter -file Intermidiate.cer -keystore keystore.jks -storepass samadhaan@123
+
+orapki  wallet create -wallet mobilewallet -auto_login
+
+Put _p_ samadhaan@123
+
+orapki wallet jks_to_pkcs12 -wallet /home/webadmin/CertDec2020/mobilewallet24Dec2020/p12req/mobilewallet -pwd samadhaan@123 -keystore keystore.jks -jkspwd samadhaan@123 Done
+
+orapki wallet add -wallet /home/webadmin/CertDec2020/mobilewallet24Dec2020/p12req/mobilewallet -trusted_cert -cert /home/webadmin/CertDec2020/mobilewallet24Dec2020/p12req/sbi_root.cer -pwd samadhaan@123
+
+orapki wallet display -wallet /home/webadmin/CertDec2020/mobilewallet24Dec2020/p12req/mobilewallet
+##########################################################################################
+
+
+Convert p12 to JKS 
+
+keytool -importkeystore -srckeystore src.p12 -srcstoretype PKCS12 -deststoretype JKS -destkeystore target.jks
+
+#######################################
+To create p12 using key and crt file 
+openssl pkcs12 -export -out domainname.p12 -inkey server.key -in server.crt -password pass:pass1234
+
+To see the content of p12
+/usr/java7_64/bin/keytool -list -keystore domainname.p12 -storetype PKCS12
+
+Converted from p12 to jks 
+ /usr/java7_64/bin/keytool -importkeystore -srckeystore domainname.p12 -srcstoretype pkcs12 -srcalias "579822298427597125880474839254217723671516984cn=llmsocas-uatapp.sbi.co.in, ou=it retail loans, o=state bank of india, l=navi mumbai, st=maharashtra, c=incn=sbi-prod-rca, dc=ad, dc=sbi" -srcstorepass pass1234 -destkeystore domainname.jks -deststoretype jks -deststorepass ocaspass -destalias llmsocas-uatapp.sbi.co.in
+
+Imported the trusted certificate
+/usr/java7_64/bin/keytool -import -trustcacerts -keystore domainname.jks -storepass ocaspass -alias ENC_EIS_UAT -import -file EIS_ENC_UA6.crt
+######################################
+To match key, certifcates and csr 
+bash-4.2#  openssl req -in *.csr -pubkey -noout -outform pem |cksum
+3914330305 451
+bash-4.2#  openssl x509 -in *.cer -pubkey -noout -outform pem |cksum
+3914330305 451
+bash-4.2#  openssl pkey -in *.key -pubout -outform pem |cksum
+3914330305 451
+#######################################
+To see the certificate contents 
+#######################################
+/usr/java7_64/bin/keytool -printcert -file 'DigiCert Global Root G2.cer'
+/usr/java7_64/bin/keytool -printcert -file samadhaan_onlinesbi_co1.cer
+/usr/java7_64/bin/keytool -printcert -file 'DigiCert EV RSA CA G2.cer'
+==========================================================================================================================================================================================================
+SAN certificate using openssl
+###############################
+openssl req -new -sha256 \
+    -key domain.key \
+    -subj "/C=US/ST=CA/O=Acme, Inc./CN=example.com" \
+    -reqexts SAN \
+    -config <(cat /etc/ssl/openssl.cnf \
+        <(printf "\n[SAN]\nsubjectAltName=DNS:example.com,DNS:www.example.com")) \
+    -out domain.csr
+
+Ex
+openssl req -new -newkey rsa:2048 -nodes -keyout quickappuat.uatmobilityquick1.sbi.key \
+-subj "/C=IN/ST=Maharashtra/L=Mumbai/O=STATE BANK OF INDIA/OU=MOBILE BANKING DEPARTMENT/CN=quickappuat.uatmobilityquick1.sbi" -reqexts SAN \
+ -config <(cat /etc/pki/tls/openssl.cnf <(printf "\n[SAN]\nsubjectAltName=DNS:quickappuat.sbi")) \
+-out quickappuat.uatmobilityquick1.sbi.csr
+
+==========================================================================================================================================================================================================
+To unlock user in AIX server 
+  505  lsuser wasadmin
+  506  lsuser -a unsuccessful_login_count wasadmin
+  507  chsec -f /etc/security/lastlog -a unsuccessful_login_count=0 -s wasadmin
+  508  chuser account_locked=false wasadmin
+  509  lsuser  wasadmin
+==========================================================================================================================================================================================================
+
+
+IHS certificate commands
+/opt/IBMKONY/WebSphere/AppServer/java_1.8_64/bin/keytool -import -alias midentity.onlinesbi.com_07May2022 -keystore /opt/IBMKONY/WebSphere/AppServer/java_1.8_64/jre/lib/security/cacerts -file /mobilitylogs/ndlogs/midentity.onlinesbi.com.cer -storepass changeit
+/opt/IBMKONY/WebSphere/AppServer/java_1.8_64/bin/keytool -import -alias mmfconsole.onlinesbi.com.cer_07May2022 -keystore /opt/IBMKONY/WebSphere/AppServer/java_1.8_64/jre/lib/security/cacerts -file /mobilitylogs/ndlogs/mmfconsole.onlinesbi.com.cer -storepass changeit
+
+./gskcmd -cert -list -db /opt/IBM/WebSphere/Plugins/config/uatfreedomonline/plugin-key.kdb -pw WebAS -expiry
+./gskcmd -cert -add -db /opt/IBM/WebSphere/Plugins/config/uatfreedomonline/plugin-key.kdb -file /tmp/abc.cer  -label abc -pw WebAS
+
+./gskcmd -cert -list -expiry -db /opt/IBM/HTTPServer/conf/ssl/midentity_onlinesbi_com.kdb 
+
+./gskcmd -cert -add -db /opt/IBM/HTTPServer/conf/ssl/midentity_onlinesbi_com.kdb -file /mobilitylogs/ndlogs/midentity.onlinesbi.com.cer  -label mobilityidentity.onlinesbi.com -pw admin@123
+
+./gskcmd -cert -add -db /opt/IBM/HTTPServer/conf/ssl/midentity_onlinesbi_com.kdb -file /mobilitylogs/ndlogs/midentity.onlinesbi.com.cer  -label midentity.onlinesbi.com -pw admin@123
+
+
+
+
+./gskcmd -cert -remove -db /opt/IBM/HTTPServer/conf/ssl/midentity_onlinesbi_com.kdb  -label 1 -pw admin@123
+
+
+KeyFile "/opt/IBM/HTTPServer/conf/ssl/midentity_onlinesbi_com.kdb"
+SSLStashFile "/opt/IBM/HTTPServer/conf/ssl/midentity_onlinesbi_com.sth"
+
+
+ 506  ls -lrt
+  507  /opt/IBM/HTTPServer/bin/gskcmd -cert -list -db cugmobility_onlinesbi_com.kdb
+  508  /opt/IBM/HTTPServer/bin/gskcmd -cert -list -db cugmobility_onlinesbi_com.kdb
+  509  /opt/IBM/HTTPServer/bin/gskcmd -cert -list -db cugmobility_onlinesbi_com.kdb -getdefault
+  510  /opt/IBM/HTTPServer/bin/gskcmd --help
+  511  /opt/IBM/HTTPServer/bin/gskcmd -cert -db cugmobility_onlinesbi_com.kdb -getdefault
+  512  /opt/IBM/HTTPServer/bin/gskcmd -cert -getdefault --help
+  513  /opt/IBM/HTTPServer/bin/gskcmd -cert -getdefault -db cugmobility_onlinesbi_com.kdb
+  514  ls -lrt
+  515  /opt/IBM/HTTPServer/bin/gskcmd -cert -db mobilityidentity_onlinesbi_com.p12
+  516  /opt/IBM/HTTPServer/bin/gskcmd -cert -list -db mobilityidentity_onlinesbi_com.p12
+  517  /opt/IBM/HTTPServer/bin/gskcmd -cert -details -db mobilityidentity_onlinesbi_com.p12 -label 1
+  518  ls -lrt
+  519  /opt/IBM/HTTPServer/bin/gskcmd --help
+  520  /opt/IBM/HTTPServer/bin/gskcmd -keydb --help
+  521  /opt/IBM/HTTPServer/bin/gskcmd -keydb -convert --help
+  522  /opt/IBM/HTTPServer/bin/gskcmd -keydb -convert -db /tmp/07May2022/midentity.onlinesbi.com.p12 -old_format pkcs12 -target mobilityidentity_onlinesbi_com.kdb -new_format kdb -new_pw adminsbi123 -stash -pw adminsbi123
+  523  ls -lrt
+  524  chmod 755 *
+  525  /opt/IBM/HTTPServer/bin/gskcmd -cert -list -db midentity_onlinesbi_com.kdb
+  526  /opt/IBM/HTTPServer/bin/gskcmd -cert -getdefault -db mobilityidentity_onlinesbi_com.kdb
+  527  /opt/IBM/HTTPServer/bin/gskcmd --help
+  528  /opt/IBM/HTTPServer/bin/gskcmd -cert -rename --help
+  529  /opt/IBM/HTTPServer/bin/gskcmd -cert -rename -db mobilityidentity_onlinesbi_com.kdb -label "1" -new_label mobilityidentity_onlinesbi_com
+  530  /opt/IBM/HTTPServer/bin/gskcmd -cert -list -db mobilityidentity_onlinesbi_com.kdb
+  531  /opt/IBM/HTTPServer/bin/gskcmd -cert -rename -db mobilityidentity_onlinesbi_com.kdb -label "CN=DigiCert EV RSA CA G2, O=DigiCert Inc, C=US" -new_label mobilityidentity_onlinesbi_com_inter
+  532  /opt/IBM/HTTPServer/bin/gskcmd -cert -rename -db mobilityidentity_onlinesbi_com.kdb -label "CN=DigiCert Global Root G2, OU=www.digicert.com, O=DigiCert Inc, C=US" -new_label mobilityidentity_onlinesbi_com_root
+  533  /opt/IBM/HTTPServer/bin/gskcmd -cert -list -db mobilityidentity_onlinesbi_com.kdb
+  534  /opt/IBM/HTTPServer/bin/gskcmd -cert -getdefault -db mobilityidentity_onlinesbi_com.kdb
+  535  /opt/IBM/HTTPServer/bin/gskcmd -cert -setdefault -db mobilityidentity_onlinesbi_com.kdb -label mobilityidentity_onlinesbi_com
+  536  /opt/IBM/HTTPServer/bin/gskcmd -cert -getdefault -db mobilityidentity_onlinesbi_com.kdb
+
+/opt/IBM/HTTPServer/bin/gskcmd -cert -rename -db /opt/IBM/HTTPServer/conf/ssl/midentity_onlinesbi_com.kdb -label "mobilityidentity.onlinesbi.com" -new_label "1"
+
+
+
+root@sbiimobdrw14:/opt/IBM/HTTPServer/conf/ssl#ls -arlt
+total 296
+-rwxr-xr-x    1 wasadmin was             193 Nov 15 17:43 midentity_onlinesbi_com.sth07May2022
+-rwxr-xr-x    1 wasadmin was           15088 Nov 15 19:09 midentity_onlinesbi_com.kdb07May2022
+-rwxr-xr-x    1 wasadmin was           15088 Nov 15 19:09 midentity_onlinesbi_com.kdb07May202
+-rw-r-----    1 wasadmin was            5884 Apr 26 15:17 midentity.onlinesbi.com.p12
+-rw-r-----    1 wasadmin was             193 Apr 26 15:17 midentity_onlinesbi_com.sth
+-rw-r-----    1 wasadmin was             193 Apr 26 15:17 midentity.onlinesbi.com.sth
+-rw-r-----    1 wasadmin was              80 Apr 26 15:17 midentity.onlinesbi.com.rdb
+-rwxr-xr-x    1 wasadmin was           20088 May 07 09:34 midentity_onlinesbi_com.kdb_b4_removingold_alias
+drwxr-xr-x    4 wasadmin was            4096 May 07 09:46 ..
+-rwxr-xr-x    1 wasadmin was           15088 May 07 10:10 midentity_onlinesbi_com.kdb_b4_renaming_label
+-rwxr-xr-x    1 wasadmin was              80 May 07 10:18 midentity_onlinesbi_com.rdb07May2022
+-rwxr-xr-x    1 wasadmin was           15088 May 07 10:18 midentity_onlinesbi_com.kdb
+-rwxr-xr-x    1 wasadmin was              80 May 07 10:18 midentity_onlinesbi_com.rdb
+-rw-r-----    1 wasadmin was             193 May 07 10:58 mobilityidentity_onlinesbi_com.sth
+-rw-r-----    1 wasadmin was              80 May 07 11:00 mobilityidentity_onlinesbi_com.rdb
+-rw-r-----    1 wasadmin was           15088 May 07 11:00 mobilityidentity_onlinesbi_com.kdb
+drwxr-xr-x    2 wasadmin was            4096 May 07 11:02 .
+root@sbiimobdrw14:/opt/IBM/HTTPServer/conf/ssl#cd ..
+
+
+        KeyFile "/opt/IBM/HTTPServer/conf/ssl/midentity_onlinesbi_com.kdb"
+        SSLStashFile "/opt/IBM/HTTPServer/conf/ssl/midentity_onlinesbi_com.sth"
+
+
+
+root@sbiimobdrw14:/tmp/07Maymidentity#ls -arlt
+total 184
+-rw-r-----    1 wasadmin was            1163 Apr 22 18:23 midentity.zip
+-rw-r-----    1 wasadmin was            1679 Apr 22 18:23 midentity.onlinesbi.com_RSA.key
+-rw-r-----    1 wasadmin was            1704 Apr 22 18:23 midentity.onlinesbi.com.key
+-rw-r-----    1 wasadmin was            1070 Apr 22 18:23 midentity.onlinesbi.com.csr
+-rw-r-----    1 wasadmin was            2504 Apr 26 15:09 midentity.onlinesbi.com.cer
+-rw-r-----    1 wasadmin was            1874 Apr 26 15:10 intermidiate1.cer
+-rw-r-----    1 wasadmin was            1294 Apr 26 15:10 root.cer
+-rw-r-----    1 wasadmin was            5884 Apr 26 15:17 midentity.onlinesbi.com.p12.txt
+-rw-r-----    1 wasadmin was            3168 Apr 26 15:17 ca-bundle-client.crt
+-rw-r-----    1 wasadmin was            5459 Apr 26 15:17 midentity.onlinesbi.com.jks
+-rw-r-----    1 wasadmin was             193 Apr 26 15:17 midentity.onlinesbi.com.sth
+-rw-r-----    1 wasadmin was              80 Apr 26 15:17 midentity.onlinesbi.com.rdb
+-rw-r-----    1 wasadmin was            2861 Apr 26 15:17 midentity.onlinesbi.com.pem
+-rw-r-----    1 wasadmin was           15088 Apr 26 15:17 midentity.onlinesbi.com.kdb
+drwxrwxrwx    2 root     system         4096 May 07 11:14 .
+drwxrwxrwt   53 bin      bin           12288 May 07 11:15 ..
+root@sbiimobdrw14:/tmp/07Maymidentity#pwd
+
+/opt/IBM/HTTPServer/bin/gskcmd -cert -setdefault -db midentity.onlinesbi.com.kdb -label midentity.onlinesbi.com -pw adminsbi123 -type cms
+/opt/IBM/HTTPServer/bin/gskcmd -cert -list -db midentity.onlinesbi.com.kdb
+
+
+
+
+
+root@sbiimobdrw14:/tmp/07Maymidentity#/opt/IBM/HTTPServer/bin/gskcmd -cert -list -db mobilityidentity.onlinesbi.com.kdb
+
+The input file '/tmp/07Maymidentity/mobilityidentity.onlinesbi.com.kdb' could not be found.
+
+Check the database path.
+root@sbiimobdrw14:/tmp/07Maymidentity#/opt/IBM/HTTPServer/bin/gskcmd -cert -list -db midentity.onlinesbi.com.kdb
+
+A password is required to access the source key database.
+Please enter a password:
+
+Certificates in database /tmp/07Maymidentity/midentity.onlinesbi.com.kdb:
+   midentity.onlinesbi.com
+   "CN=DigiCert EV RSA CA G2, O=DigiCert Inc, C=US"
+   "CN=DigiCert Global Root G2, OU=www.digicert.com, O=DigiCert Inc, C=US"
+
+
+
+root@sbiimobdrw14:/tmp/07Maymidentity#/opt/IBM/HTTPServer/bin/gskcmd -cert -setdefault -db midentity.onlinesbi.com.kdb -label midentity.onlinesbi.com -pw adminsbi123 -type cms
+
+root@sbiimobdrw14:/tmp/07Maymidentity#/opt/IBM/HTTPServer/bin/gskcmd -cert -list -db midentity.onlinesbi.com.kdb
+A password is required to access the source key database.
+Please enter a password:
+
+Certificates in database /tmp/07Maymidentity/midentity.onlinesbi.com.kdb:
+   midentity.onlinesbi.com
+   "CN=DigiCert EV RSA CA G2, O=DigiCert Inc, C=US"
+   "CN=DigiCert Global Root G2, OU=www.digicert.com, O=DigiCert Inc, C=US"
+root@sbiimobdrw14:/tmp/07Maymidentity#./apachectl  -f /opt/IBM/HTTPServer/conf/midentity-internet-dmgr2-SSL.conf -k stop
+bash: ./apachectl: A file or directory in the path name does not exist.
+root@sbiimobdrw14:/tmp/07Maymidentity#cd /opt/IBM/HTTPServer/bin
+root@sbiimobdrw14:/opt/IBM/HTTPServer/bin#./apachectl  -f /opt/IBM/HTTPServer/conf/midentity-internet-dmgr2-SSL.conf -k stop
+root@sbiimobdrw14:/opt/IBM/HTTPServer/bin#./apachectl  -f /opt/IBM/HTTPServer/conf/midentity-internet-dmgr2-SSL.conf -k start
+root@sbiimobdrw14:/opt/IBM/HTTPServer/bin#cd ../logs
+root@sbiimobdrw14:/opt/IBM/HTTPServer/logs#ps -ef |grep httpd
+  nobody 3342486 1311372   0 11:24:06      -  0:00 /opt/IBM/HTTPServer/bin/httpd -d /opt/IBM/HTTPServer -f /opt/IBM/HTTPServer/conf/midentity-internet-dmgr2-SSL.conf -k start
+  nobody 1900868 1311372   0 11:24:06      -  0:00 /opt/IBM/HTTPServer/bin/httpd -d /opt/IBM/HTTPServer -f /opt/IBM/HTTPServer/conf/midentity-internet-dmgr2-SSL.conf -k start
+    root 2752944 1311372   0 11:24:06      -  0:00 /opt/IBM/HTTPServer/bin/httpd -d /opt/IBM/HTTPServer -f /opt/IBM/HTTPServer/conf/midentity-internet-dmgr2-SSL.conf -k start
+    root 1311372       1   0 11:24:06      -  0:00 /opt/IBM/HTTPServer/bin/httpd -d /opt/IBM/HTTPServer -f /opt/IBM/HTTPServer/conf/midentity-internet-dmgr2-SSL.conf -k start
+  nobody 2621982 1311372   0 11:24:06      -  0:00 /opt/IBM/HTTPServer/bin/httpd -d /opt/IBM/HTTPServer -f /opt/IBM/HTTPServer/conf/midentity-internet-dmgr2-SSL.conf -k start
+root@sbiimobdrw14:/opt/IBM/HTTPServer/logs#
+
+
+
+/opt/IBM/HTTPServer/bin/gskcmd -cert -setdefault -db midentity.onlinesbi.com.kdb -label midentity.onlinesbi.com -pw adminsbi123 -type cms
+
+
+
+/opt/IBM/HTTPServer/bin/gskcmd -cert -setdefault -db mobilityidentity.onlinesbi.com.kdb -label mobilityidentity.onlinesbi.com -pw adminsbi123 -type cms
+
+        #KeyFile "/opt/IBM/HTTPServer/conf/ssl/mobilityidentity.onlinesbi.com.kdb"
+        #SSLStashFile "/opt/IBM/HTTPServer/conf/ssl/mobilityidentity.onlinesbi.com.sth"
+
+
+        KeyFile "/opt/IBM/HTTPServer/conf/ssl/mobilityidentity.onlinesbi.com.kdb"
+        SSLStashFile "/opt/IBM/HTTPServer/conf/ssl/mobilityidentity.onlinesbi.com.sth"
+
+
+admin@123mobdrw15:
+/opt/IBM/HTTPServer/conf/ssl#
+./gskcmd -cert -delete -db /opt/IBM/HTTPServer/conf/ssl/midentity_onlinesbi_com.kdb -label mobilityidentity.onlinesbi.com -pw admin@123
+
+/opt/IBM/HTTPServer/bin/gskcmd -cert -add -db /opt/IBM/HTTPServer/conf/ssl/midentity_onlinesbi_com.kdb -file /mobilitylogs/ndlogs/midentity.onlinesbi.com.cer  -label midentity.onlinesbi.com -pw admin@123
+
+
+
+
+       KeyFile "/opt/IBM/HTTPServer/conf/ssl/mobilityidentity.onlinesbi.com.kdb"
+        SSLStashFile "/opt/IBM/HTTPServer/conf/ssl/mobilityidentity.onlinesbi.com.sth"
+
+
+
+
+        #SSLFIPSEnable
+        SSLProtocolEnable TLSv12
+        SSLProtocolDisable SSLv2 SSLv3 TLSv1 TLSv11
+        SSLCipherSpec ALL NONE
+        SSLCipherSpec TLSv12 +TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 +TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        KeyFile "/opt/IBM/HTTPServer/conf/ssl/mobilityidentity_onlinesbi_com.kdb"
+        SSLStashFile "/opt/IBM/HTTPServer/conf/ssl/mobilityidentity_onlinesbi_com.sth"
+########################################################################################################
+
+To enable x11 on the linux machine 
+#########################
+check packages are avable or not 
+rpm -qa |grep -i xorg*
+vi /etc/ssh/sshd_config
+change from 
+X11Forwarding no 
+to
+X11Forwarding yes
+systemctl restart sshd
+#################################
+
+cd E:\Oracle\Middleware\Oracle_Home\oracle_common\common\bin\
+wlst.cmd
+connect('weblogic', 'V@ult$5678' , 't3://10.189.39.51:7001')
+nmEnroll('E:\\Oracle\\Middleware\\Oracle_Home\\user_projects\\domains\\sbidomain\\')
+nmEnroll('E:\Oracle\Middleware\Oracle_Home\user_projects\domains\sbidomain\','E:\Oracle\Middleware\Oracle_Home\user_projects\domains\sbidomain\nodemanager\Machine1')
+nmEnroll('C:\Oracle11g\Middleware\user_projects\domains\sbiquick','C:\Oracle11g\Middleware\user_projects\domains\sbiquick\nodemanager\Machine2')
+
+
+nmEnroll('E:\\Oracle\\Middleware\\Oracle_Home\\user_projects\\domains\\sbidomain')
+wls:/sbidomain/serverConfig/> 
+nmEnroll('E:\\Oracle\\Middleware\\Oracle_Home\\user_projects\\domains\\sbidomain','E:\\Oracle\\Middleware\\Oracle_Home\\user_projects\\domains\\sbidomain\\nodemanager')
+Enrolling this machine with the domain directory at E:\Oracle\Middleware\Oracle_Home\user_projects\domains\sbidomain ...
+Successfully enrolled this machine with the domain directory at E:\Oracle\Middleware\Oracle_Home\user_projects\domains\sbidomain.
+
+
+\Oracle\Java\jdk1.8.0_291\bin\java.exe -jar \Patches\6880880\opatch_generic.jar -silent oracle_home=E:\Oracle\Middleware\Oracle_Home
+
+
+######################################
+How to open a BKS certificates file
+######################################
+bash-4.2$ keytool -list -v -keystore thinkwalnutCer.bks  -provider org.bouncycastle.jce.provider.BouncyCastleProvider -providerpath /opt/IBM/WebSphere/AppServer/profiles//AppSrv01/installedApps/sbiimobdra12Cell01/sbiunifiedapp-v3_9_01_war.ear/sbiunifiedapp-v3_9_01.war/WEB-INF/lib/bcprov-jdk16-1.46.jar -storetype BKS -storepass "twdjks"
+
+Keystore type: BKS
+Keystore provider: BC
+
+Your keystore contains 1 entry
+
+Alias name: twdbz
+Creation date: Dec 15, 2022
+Entry type: trustedCertEntry
+
+Owner: CN=*.twd.bz
+Issuer: C=GB,ST=Greater Manchester,L=Salford,O=Sectigo Limited,CN=Sectigo RSA Domain Validation Secure Server CA
+Serial number: c28acde7af91111e45997c94487d4398
+Valid from: 11/15/22 5:30 AM until: 11/19/23 5:29 AM
+Certificate fingerprints:
+         MD5:  87:4F:8B:51:6F:2B:F5:A8:0A:7A:AD:AA:E3:0F:13:34
+         SHA1: F6:D8:D5:5E:9B:5D:D9:A3:39:DD:76:3A:C2:1C:75:E7:93:5B:43:36
+         SHA256: 07:57:68:E5:0B:CF:38:42:12:3F:E5:AA:69:05:23:7C:4E:1A:EA:63:AE:D0:11:64:E7:E0:5B:5D:F2:DE:F5:87
+         Signature algorithm name: SHA256WithRSAEncryption
+         Version: 3
+
+
+*******************************************
+*******************************************
+
+
+bash-4.2$
+
+
+keytool -changealias -alias "eis_pub" -destalias "eis_pub_2022" -keypass SbiMb@4321 -keystore whatsapp_eis.jks -storepass SbiMb@4321
+
+*******************************************
+*******************************************
+
+Check memrory in AIX system 
+#######################################
+bash-4.2$  svmon -G  -O unit=GB
+Unit: GB
+--------------------------------------------------------------------------------------
+               size       inuse        free         pin     virtual  available   mmode
+memory         96.0        27.5        68.5        7.32        9.74       83.4     Ded
+pg space       32.0        0.03
+
+               work        pers        clnt       other
+pin            4.13           0        0.02        3.17
+in use         9.74           0        17.7
+bash-4.2$
+****************************************************************************************************************************************************************************
+How to capture a packet 
+On surce 
+          tcpdump -i any -nn dst 10.191.145.96 -w /tmp/Source.pcap
+On destination 
+        tcpdump -i any -nn src 10.191.218.15  -w /tmp/Destination.pcap
+To read
+       tcpdump -r /tmp/Source.pcap
+
+ ##############TO take heap dump#########
+jmap -dump:format=b,file=heap.hprof <pid>
+
+****************************************************************************************************************************************************************************
+Error: 
+devadmin@sbimobuata17$keytool -list -v -keystore whatsappbankinguat.sbi.jks -storepass admin123
+keytool error (likely untranslated): java.io.IOException: Invalid keystore format
+devadmin@sbimobuata17$keytool -v -list -keystore whatsappbankinguat.sbi.jks -storepass changeit -storetype BCFKS
+keytool error (likely untranslated): java.security.KeyStoreException: BCFKS not found
+
+
+Solution: 
+devadmin@sbimobuata17$keytool -v -list -keystore whatsappbankinguat.sbi.jks  -storetype PKCS12 -storepass admin123
+devadmin@sbimobuata17$#keytool -importkeystore -srckeystore <source_keystoreFile> -srcstoretype PKCS12 -destkeystore <destination_keystoreFile>  -deststoretype JKS -srcstorepass mysecret -deststorepass mysecret -srcalias myalias -destalias myalias -srckeypass mykeypass -destkeypass mykeypass -noprompt
+devadmin@sbimobuata17$keytool -importkeystore -srckeystore whatsappbankinguat.sbi.jks -srcstoretype PKCS12 -destkeystore whatsappbankinguat.new.jks -deststoretype JKS -srcstorepass admin123  -deststorepass admin123 -srcalias whatsappbankinguat.sbi -destalias whatsappbankinguat.sbi -srckeypass admin123 -destkeypass admin123 -noprompt
+****************************************************************************************************************************************************************************
+Keystore only has one password. You can change it using keytool:
+       keytool -storepasswd -keystore my.keystore
+To change the key's password:
+       keytool -keypasswd  -alias <key_name> -keystore my.keystore
+
+****************************************************************************************************************************************************************************
+Search string in a windows files
+FINDSTR /ic:"hello" Demo.txt | findstr /ic:"goodbye"
+****************************************************************************************************************************************************************************
+To check the certificate details using stashed file 
+Command
+/opt/IBM/HTTPServer/bin/gskcmd -cert -list -db /opt/IBM/HTTPServer/SSL/KDB/api.yonolite.sbi.kdb -stashed /opt/IBM/HTTPServer/SSL/KDB/api.yonolite.sbi.sth
+##################
+
+To check wallet certificate validity 
+#####################################
+orapki  wallet export -wallet ""/OHS12c/Oracle/Middleware/Oracle_Home/user_projects/domains/base_domain/config/fmwconfig/components/OHS/instances/ohs1/keystores/default"" -dn 'CN=localhost,OU=FOR TESTING ONLY,O=FOR TESTING ONLY'  -cert /tmp/server.cer
+
+orapki  wallet export -wallet "/OHS12c/Oracle/Middleware/Oracle_Home/user_projects/domains/base_domain/mobilewallet" -dn 'CN=quickappuat.uatmobilityquick1.sbi,O=STATE BANK OF INDIA,L=Mumbai,ST=Maharashtra,C=IN,SERIALNUMBER=Government Entity,2.5.4.15=Government Entity,1.3.6.1.4.1.311.60.2.1.3=IN' -cert /tmp/server.cer
+openssl x509 -in /tmp/server.cer  -noout -text
+****************************************************************************************************************************************************************************
+Generate and import certifcate using runmqckm  :-
+runmqckm  -keydb -create -db key.kdb -pw 12345 -type cms -stash
+runmqckm -certreq -create -db key.kdb -pw 12345 -label mobilitymqimpsuat -dn "CN=mobilityimpsuat.sbi,O=SBI,C=IN" -size 2048 -sig_alg SHA256WithRSA -file mobilitymqimpsuat.csr
+runmqckm -cert -add -db key.kdb -pw 12345 -file root_SBI.cer -format ascii
+runmqckm -cert -receive -db key.kdb -pw 12345 -file certnew.cer -format ascii
+runmqckm -cert -extract -db key.kdb -pw 12345 -label mobilitymqimpsuat -target mobilitymqimpsuat.arm -format ascii
+****************************************************************************************************************************************************************************
+To truncate the files to create a space withoud rm command :-
+          find /opt/IBM/WebSphere/AppServer/profiles/Dmgr01/config.old -type f -exec mv {} /tmp/file1.txt \;
+
+Find a files in a windows command promt 
+       dir /b/s log4j*.jar
+
+#######################################################
+To print the certificate using keytool command 
+#########################################################
+C:\Users\vtm708681>"c:\Program Files\Java\jdk1.8.0_112\bin\keytool.exe"  -printcert -sslserver api.yonoliteapp.sbi:443
+****************************************************************************************************************************************************************************
+ssl.conf file on OHS Server:
+
+
+###################################################################
+# Oracle HTTP Server mod_ossl configuration file: ssl.conf        #
+###################################################################
+
+# The Listen directive below has a comment preceding it that is used
+# by tooling which updates the configuration.  Do not delete the comment.
+#[Listen] OHS_SSL_PORT
+Listen 10.191.206.95:9443
+
+<IfModule ossl_module>
+##
+##  SSL Global Context
+##
+##  All SSL configuration in this context applies both to
+##  the main server and all SSL-enabled virtual hosts.
+##
+
+#
+#   Some MIME-types for downloading Certificates and CRLs
+    AddType application/x-x509-ca-cert .crt
+    AddType application/x-pkcs7-crl    .crl
+
+#   Inter-Process Session Cache:
+#   Configure the SSL Session Cache: First the mechanism
+#   to use, second the expiring timeout (in seconds) and third
+#   the mutex to be used.
+    SSLSessionCache "shmcb:${ORACLE_INSTANCE}/servers/${COMPONENT_NAME}/logs/ssl_scache(512000)"
+    SSLSessionCacheTimeout  300
+    <IfModule !mpm_winnt_module>
+      Mutex pthread ssl-cache
+    </IfModule>
+
+##
+## SSL Virtual Host Context
+##
+#[VirtualHost] OHS_SSL_VH
+<VirtualHost 10.191.206.95:9443>
+  <IfModule ossl_module>
+   #  SSL Engine Switch:
+   #  Enable/Disable SSL for this virtual host.
+   SSLEngine on
+
+   #  Client Authentication (Type):
+   #  Client certificate verification type and depth.  Types are
+   #  none, optional and require.
+   SSLVerifyClient None
+
+   #  SSL Protocol Support:
+   #  Configure usable SSL/TLS protocol versions.
+   SSLProtocol -ALL +TLSv1.2
+
+   #  SSL Cipher Suite:
+   #  List the ciphers that the client is permitted to negotiate.
+
+        SSLCipherSuite TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+   # SSL Certificate Revocation List Check
+   # Valid values are On and Off
+   SSLCRLCheck Off
+
+   #Path to the wallet
+   #SSLWallet "${ORACLE_INSTANCE}/config/fmwconfig/components/${COMPONENT_TYPE}/instances/${COMPONENT_NAME}/keystores/default"
+        SSLWallet "/OHS12c/Oracle/Middleware/Oracle_Home/user_projects/domains/base_domain/mobilewallet"
+
+
+
+   <FilesMatch "\.(cgi|shtml|phtml|php)$">
+      SSLOptions +StdEnvVars
+   </FilesMatch>
+
+   <Directory "${ORACLE_INSTANCE}/config/fmwconfig/components/${COMPONENT_TYPE}/instances/${COMPONENT_NAME}/cgi-bin">
+      SSLOptions +StdEnvVars
+   </Directory>
+
+   BrowserMatch "MSIE [2-5]" \
+         nokeepalive ssl-unclean-shutdown \
+         downgrade-1.0 force-response-1.0
+
+  </IfModule>
+
+#ServerName 10.189.45.239
+Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+SSLProxyEngine on
+SSLProxyCipherSuite ALL:!ADH:!EXPORT56:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP
+SSLProxyWallet "/OHS12c/Oracle/Middleware/Oracle_Home/user_projects/domains/base_domain/mobilewallet"
+
+CustomLog "||${PRODUCT_HOME}/bin/odl_rotatelogs ${ORACLE_INSTANCE}/servers/${COMPONENT_NAME}/logs/ssl_request_log 43200" "%t %{x-forwarded-for}i LB=%h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b %s \"%{Referer}i\" \"%{User-Agent}i\""
+
+<IfModule mod_rewrite.c>
+    RewriteEngine on
+    RewriteCond %{REQUEST_METHOD} !^(GET|POST)
+    RewriteRule .* - [R=405.L]
+</IfModule>
+<IfModule mod_headers.c>
+    #Header unset ETag
+    Header set X-XSS-Protection "1; mode=block"
+    #Header always append X-Frame-Options SAMEORIGIN
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    Header always set X-Content-Type-Options "nosniff"
+    Header set Access-Control-Allow-Origin  "https://uat.whatsappmobility.sbi"
+</IfModule>
+</VirtualHost>
+
+</IfModule>
+
+
+****************************************************************************************************************************************************************************
+Apply DB19 Patch(OHS) upgrad 12c to 19c DB client from OHS:
+
+#!/usr/bin/bash
+echo "Verify the DB client using below command" ;
+/Middleware/Oracle_Home/oui/bin/viewInventory.sh | grep -i rdbms.rsf ;
+echo "Extracting patches instantclient-basic-linux.x64-19.19.0.0.0dbru.el9.zip  p28186730_1394215_Generic.zip  p31190532_122140_Generic.zip  p34761383_122140_Linux-x86-64.zip p36393221_122140_Linux-x86-64.zip" ;
+cd /Middleware/PATCHES/;
+unzip instantclient-basic-linux.x64-19.19.0.0.0dbru.el9.zip  ;
+sleep 10 ;
+unzip p28186730_1394215_Generic.zip  ;
+sleep 10 ;
+unzip p31190532_122140_Generic.zip  ;
+sleep 10 ;
+unzip p34761383_122140_Linux-x86-64.zip ;
+sleep 20 ;
+unzip p36393221_122140_Linux-x86-64.zip;
+sleep 5 ;
+echo "Run changeperm.sh to change permission." ;
+cd /Middleware/PATCHES/34761383 ;
+./changePerm.sh /Middleware/Oracle_Home;
+sleep 15 ;
+echo "apply 31190532 and update OHS DB from 12c to 19C";
+/Middleware/PATCHES/34761383/fmw_12.2.1.19.0_dbclient_linux64.bin -prereqConfigLoc /Middleware/PATCHES/31190532/prereq_metadata/oracle.as.install.ohs.prerequisite/prereq -invPtrLoc /Middleware/binary/oraInst.loc -silent ORACLE_HOME=/Middleware/Oracle_Home ;
+sleep 200;
+echo "Validate the DB version";
+/Middleware/Oracle_Home/oui/bin/viewInventory.sh | grep -i rdbms.rsf ;
+sleep 5;
+echo "Upgrate the OPatch veresion" ;
+/Middleware/Java/jdk-11.0.23/bin/java -jar /Middleware/PATCHES/6880880/opatch_generic.jar -silent oracle_home=/Middleware/Oracle_Home ;
+sleep 40 ;
+echo "Apply 36393221 latest patch";
+cd /Middleware/PATCHES/36393221/ ;
+/Middleware/Oracle_Home/OPatch/opatch apply -silent ;
+sleep 40 ;
+echo "Validate patch " ;
+/Middleware/Oracle_Home/OPatch/opatch lsinv ;
+sleep 10 ;
+echo "Copying libclntshcore.so.19.1 to Oracle_Home/lib" ;
+cp -Rp /Middleware/Oracle_Home/lib /Middleware/Oracle_Home/lib-b4-Update ;
+cd /Middleware/Oracle_Home/lib;
+cp -p /Middleware/PATCHES/instantclient_19_19/libclntshcore.so.19.1 .  ;
+cp -p ./stubs/libnsl.so.1 . ;
+****************************************************************************************************************************************************************************
+
+
+Performance Tuning for WebLogic
+Open Files
+On all WebLogic servers, set the open files (ulimit –n) to at least 50000 for the user that runs the WebLogic process.
+
+Maximum User Processes
+On all WebLogic servers, set the User Process (ulimit –u) to at least 131072 for the user that runs the WebLogic process.
+
+Connection Backlog
+Change the value of the echo parameter to 3000 when a high rate of incoming connection requests result in connection failures:
+echo 3000 > /proc/sys/net/core/netdev_max_backlog 
+echo 3000 > /proc/sys/net/core/somaxconn
+
+Set TCP_KEEPALIVE_INTERVAL
+The TCP_KEEPALIVE_INTERVAL parameter determines the wait time between isAlive interval probes.
+Set the value of the TCP_KEEPALIVE_INTERVAL parameter to 15 seconds, which is the recommended value. The default value is 75 seconds.
+echo 15 > /proc/sys/net/ipv4/tcp_keepalive_intvl
+
+Set TCP_KEEPALIVE_PROBES
+The TCP_KEEPALIVE_PROBES parameter determines the number of probes before timing out.
+Set the value of the TCP_KEEPALIVE_PROBES parameter to 5 seconds, which is the recommended value. The default value is 9 seconds
+echo 5  > /proc/sys/net/ipv4/tcp_keepalive_probes
+
+
+Allocate Huge Pages for Java Virtual Machine (JVM) Heap
+vm.nr_hugepages = 2048
+vm.nr_hugepages_mempolicy = 2048
+Calculation: 2048 = 8192 (Max Heap Size) /4 (Page Size)
+Ensure that the following parameter is at least set to the following value (if already set to higher number, even better):
+kernel.shmmax = 8689934592
+Calculation: 8689934592 = 8192 * 1048576 bytes/MB + 100000000 bytes
+kernel.shmall = 2172483648
+Calculation: 2172483648 = 8689934592 (shmmax) ) / 4 (Page Size)
+
+Increase Linux kernel Entropy
+On all CA Single Sign-On servers, increase the kernel entropy by adding the following rngd daemon:
+Ensure that you have installed the rng-tool package on the Linux server:
+yum –y install rng-tools
+Navigate to /etc/init.d.  (now its outdated) 
+Run vi /etc/sysconfig/rngd.
+Make the following changes:
+# Add extra options hereEXTRAOPTIONS="-r /dev/urandom -o /dev/random -t 1 -W 4096"
+
+
+Linux
+Navigate to <WEBLOGIC_DOMAIN_DIR>/ bin.
+Open setDomainEnv.sh for editing.
+Set MEM_ARGS with the following recommended values:
+MEM_ARGS="-Xms8192m -Xmx8192m"
+
+Set JAVA_OPTIONS with the following recommended values:
+
+JAVA_OPTIONS="${JAVA_OPTIONS} -XX:+UseG1GC -XX:+UseStringDeduplication -XX:+UseCompressedOops -Djava.awt.headless=true -Djava.net.preferIPv4Stack=true -Djava.security.egd=file:/dev/./urandom -XX:ReservedCodeCacheSize=50m -Djavax.xml.stream.XMLInputFactory=weblogic.xml.stax.XMLStreamInputFactory
+
+Restart the WebLogic application server.
+Note: Repeat the steps for any other JVM that is a member of the cluster.
+
+
+https://docs.oracle.com/cd/E13222_01/wls/docs81/perform/topten.html
+
+****************************************************************************************************************************************************************************
+OHS Installation & OHS instance Creation:
+
+1. Add following entries in .bash_profile
+######################################
+export JAVA_HOME=/OHS12c/OHS_PATCHES/jdk1.8.0_281
+export PATH=$JAVA_HOME/bin:$PATH
+alias orapki='/OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki'
+
+#####################
+2. To install OHS
+#########################
+/OHS12c/fmw_12.2.1.3.0_ohs_linux64.bin -silent -logLevel finest -debug -responseFile /OHS12c/ohs12C.rsp -invPtrLoc /OHS12c/oraInst.loc
+#########################
+3.ohs12c.py file
+#########################
+readDomain('/OHS12c/user_projects/domains/kony_DEV/')
+cd('/')
+create('devinternet1', 'SystemComponent')
+cd('/SystemComponent/devinternet1')
+cmo.setComponentType('OHS')
+set('Machine', 'localmachine')
+cd('/OHS/devinternet1')
+cmo.setAdminHost('127.0.0.1')
+cmo.setAdminPort('9453')
+cmo.setListenAddress('10.176.253.81')
+cmo.setListenPort('9452')
+cmo.setSSLListenPort('9443')
+cmo.setServerName('http://10.176.253.81:8452')
+#updateDomain()
+#exit()
+
+#readDomain('/OHS12c/user_projects/domains/kony_DEV/')
+cd('../../')
+create('devforkony', 'SystemComponent')
+cd('/SystemComponent/devforkony')
+cmo.setComponentType('OHS')
+set('Machine', 'localmachine')
+cd('/OHS/devforkony')
+cmo.setAdminHost('127.0.0.1')
+cmo.setAdminPort('8453')
+cmo.setListenAddress('10.176.253.81')
+cmo.setListenPort('8452')
+cmo.setSSLListenPort('8443')
+cmo.setServerName('http://10.176.253.81:8452')
+updateDomain()
+exit()
+
+##########################
+4. To create ohs1 and domain 
+/OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/common/bin/wlst.sh /OHS12c/ohs12c.py
+##########################
+5. To upgrade OPatch
+ /OHS12c/jdk1.8.0_281/bin/java -jar /OHS12c/PATCHES/6880880/opatch_generic.jar -silent oracle_home=/OHS12c/Oracle/Middleware/Oracle_Home
+####################
+6. Apply patch 
+./opatch apply /OHS12c/PATCHES/33283753
+
+7. Copy wallet from 10.189.250.150 server to 
+/OHS12c/Oracle/Middleware/user_projects/domains/base_domain/config/fmwconfig/components/OHS/instances/ohs1/mobilewallet
+
+
+
+
+Merge 
+DigiCertGlobalRootG2.txt >> chain.crt 
+DigiCert_EV_RSA_CA_G2.txt >> chain.crt 
+whatsapp_onlinesbi_co1.txt >> chain.crt
+
+openssl pkcs12 -export -out whatsappmobility.sbi.p12 -inkey whatsappmobility.sbi.key.txt -in whatsappmobility.sbi.cer -certfile chain.crt   
+
+keytool -v -importkeystore -srckeystore whatsappmobility.sbi.p12 -srcstoretype PKCS12 -destkeystore keystore.jks -deststoretype JKS
+
+keytool -importcert -alias root -file root.cer -keystore keystore.jks -storepass whatsapp@123
+
+keytool -importcert -alias inter -file intermidiate1.cer -keystore keystore.jks -storepass whatsapp@123
+
+orapki  wallet create -wallet mobilewallet -auto_login
+
+orapki wallet jks_to_pkcs12 -wallet /OHS12c/INFRA//mobilewallet -pwd whatsapp@123 -keystore keystore.jks -jkspwd whatsapp@123
+
+orapki wallet add -wallet /OHS12c/INFRA//mobilewallet -trusted_cert -cert /OHS12c/INFRA//root_SBI_cer.txt -pwd whatsapp@123
+
+orapki wallet display -wallet /OHS12c/INFRA//mobilewallet
+#########################################################################################
+
+
+7. Copy wallet as a folder name mobilewallet 
+/OHS12c/Oracle/Middleware/user_projects/domains/base_domain/config/fmwconfig/components/OHS/instances/ohs1/mobilewallet
+
+8. Copy error.html to 
+/OHS12c/Oracle/Middleware/user_projects/domains/base_domain/config/fmwconfig/components/OHS/instances/ohs1/htdocs
+
+9. Change paths in files 
+/OHS12c/Oracle/Middleware/Oracle_Home/user_projects/domains/base_domain
+to
+/OHS12c/Oracle/Middleware/user_projects/domains/base_domain 
+
+10. Change IP address 
+from 
+10.189.45.238 to 10.189.250.150
+
+11. Change IP port from 
+9443 to 9001 for ssl 
+
+12 
+Copy 
+/OHS12c/Oracle/Middleware/user_projects/domains/base_domain/security/DemoIdentity.jks 
+
+
+%s#150#151#g
+%s#150#152#g
+%s#150#153#g
+
+****************************************************************************************************************************************************************************
+Add text from ansible servers to all other servers:
+
+ssh 10.176.35.241 "echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCkbORljhj40wti0dfnh4RWbVlhwW0QoLgc4evehWr9ZlUfcfwyL+rspzxCtR7UAue4446w7zXktGJ66Q04vDO8vcsYbeG229nItgyKcIT5v+y7oNlOxfZlyr369BpFH/DH04x44PFPIRAX71r6XvvEpZ5GgnWov4zxGkdRe7enoM1GlOnqiZe030UUNTi1K8anInYEV///4g1wlNDneBvC/xjE5OnjpxfuchXRS04QnOcjQ2yXYwvkkqiEEUxXb5gQhQTkVjdiwKYa/iaFG07ITwTuqwHDurhtR9O9xviDtwJvgFfuRaBm8QL7OT74E3HLhuwYH9Q+Rk5PXfPtmNPQspA5rOWTvBi8w9N8LogTeNgpEQxUgnGN7yzmNT2fegjYsEHNPFd3/T+K/v5oJms3aS3P714kdbyZia5XWk4D1jK1Xhk7rbguPcy5TndqbuLbcdXYd84JVDh6SHSn+WVocOuqjQ44W/gbVJAkMD74bAEigS+fSqb8eE+S8/9U+/lS7lt1L2eG6yl2VlNGFUsTyPu5gf0xFH8QufMm8fnGN/b+QTdRBJ5X5eY2/CuRXr2Xz20TxyAZUVGXZas05NC8/fVntli8XjMdLzv2esdW6Z5ancYhxLtfH2E8ipLW880RueTuayuqFJxqdRRvGYk+DHkPr0gCsxgpcEsOXxJCVw== wasadmin@MOBANSIBLEPR01' >> /home/webadmin/.ssh/authorized_keys"
+
+
+=================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
