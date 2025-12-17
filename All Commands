@@ -703,6 +703,392 @@ finally:
 		    pass
 print servers
 
+==========================================================================================================================================================================================================
+WebLogic Scripts for autostartup JVM :
+StartAdminNode.sh:
+-------------------
+
+
+[appadmin@SAMUATAPP1 onboot_scripts]$ ls -lrt
+total 36
+-rwxr-xr-x 1 appadmin appadmin 1114 Dec 11 16:03 jvm_stop.py
+-rwxr-xr-x 1 appadmin appadmin  569 Dec 11 16:03 JVM_STOPManaged.sh
+-rwxr-xr-x 1 appadmin appadmin 1855 Dec 11 16:03 jvm_start.py
+-rwxr-xr-x 1 appadmin appadmin  571 Dec 11 16:03 JVM_STARTManaged.sh
+-rwxr-xr-x 1 appadmin appadmin 3224 Dec 11 16:03 StopAdminNode.sh
+-rw-r--r-- 1 appadmin appadmin    7 Dec 11 16:03 jvm.txt
+-rwxr-xr-x 1 appadmin appadmin  239 Dec 11 16:05 varibales.properties
+drwxr-xr-x 2 appadmin appadmin 4096 Dec 11 16:12 logs
+-rwxr-xr-x 1 appadmin appadmin 3035 Dec 11 16:13 StartAdminNode.sh
+[appadmin@SAMUATAPP1 onboot_scripts]$
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+
+[appadmin@SAMUATAPP1 onboot_scripts]$ cat StartAdminNode.sh
+source /Weblogic12c/infra_scripts/onboot_scripts/varibales.properties
+MAX_RETRIES=30
+SLEEP_SECONDS=2
+SUCCESS=false
+RED='\e[1;31m'
+GREEN='\033[0;32m'
+echo -e "${GREEN} Date: `date` ${CLEAR}\e[0m"
+echo -e "${RED} -------------------------------------------------------------------${CLEAR}\e[0m"
+echo -e "${RED} Domain Home Path : ${GREEN}  $DOMAIN_HOME ${CLEAR}\e[0m"
+echo -e "${RED} Oracle Home Path : ${GREEN} $ORACLE_HOME ${CLEAR}\e[0m"
+echo -e "${RED} Admin Host IP : ${GREEN} $ADMIN_IP ${CLEAR}\e[0m"
+echo -e "${RED} Admin Host Port : ${GREEN} $ADMIN_PORT ${CLEAR}\e[0m"
+echo -e "\n"
+
+startNode()
+{
+echo -e "${GREEN} Checking NodeManager is Running or NOT.... ${CLEAR}\e[0m"
+sleep 5
+value=`ps -ef| grep java |grep weblogic.NodeManager |grep -v grep |wc -l`
+if [ $value -gt 0 ]; then
+     echo -e "${GREEN}  NodeManager is Running..... ${CLEAR}\e[0m"
+else
+     echo -e "${RED}  NodeManager is Down..... ${CLEAR}\e[0m"
+     echo -e "\n"
+     echo -e "${GREEN}  Starting Node Manager..... ${CLEAR}\e[0m"
+     nohup $DOMAIN_HOME/bin/startNodeManager.sh >> $DOMAIN_HOME/bin/NodeManager.log &
+fi
+sleep 5
+echo -e "${RED} -------------------------------------------------------------------${CLEAR}\e[0m"
+echo -e "${GREEN} Reconfirming Node Manager Status...!${CLEAR}\e[0m"
+value=`ps -ef| grep java |grep weblogic.NodeManager |grep -v grep |wc -l`
+if [ $value -gt 0 ]; then
+     echo -e "${GREEN}  NodeManager is Running..... ${CLEAR}\e[0m"
+else
+     echo -e "${RED}  NodeManager is Down..... ${CLEAR}\e[0m"
+
+sleep 5
+fi
+}
+echo -e "${RED} -------------------------------------------------------------------${CLEAR}\e[0m"
+startAdmin()
+{
+echo -e "${GREEN} Checking Admin Server is Up or NOT.... ${CLEAR}\e[0m"
+sleep 5
+admin=`ps -ef | grep Dweblogic.Name=AdminServer |grep -v grep|wc -l`
+if [ $admin -gt 0 ]; then
+        echo -e "${GREEN}  Admin Server is Up..... ${CLEAR}\e[0m"
+else
+        echo -e "${RED}  Admin is Down..... ${CLEAR}\e[0m"
+        echo -e "\n"
+        echo -e "${GREEN}  Starting Admin Server..... ${CLEAR}\e[0m"
+        nohup $DOMAIN_HOME/bin/startWebLogic.sh >> $DOMAIN_HOME/bin/Admin.log &
+fi
+echo -e "${RED} -------------------------------------------------------------------${CLEAR}\e[0m"
+sleep 20
+for i in $(seq 1 $MAX_RETRIES); do
+    echo "Attempt $i of $MAX_RETRIES: Checking $HOST port $PORT..."
+    if nc -zv -w 1 "$ADMIN_IP" "$ADMIN_PORT" &>/dev/null; then
+        echo "Connection successful!"
+        SUCCESS=true
+        break
+    else
+        echo "Connection failed. Retrying in $SLEEP_SECONDS seconds..."
+        sleep $SLEEP_SECONDS
+    fi
+done
+echo -e "${RED} -------------------------------------------------------------------${CLEAR}\e[0m"
+}
+startJVMs()
+{
+if [ "$SUCCESS" = true ]; then
+    echo -e "${GREEN}  Connection Successfull.. Starting JVMs using wlst script.... ${CLEAR}\e[0m"
+    $ORACLE_HOME/oracle_common/common/bin/wlst.sh $Onboot_Home/jvm_start.py
+else
+    echo "Connectivity not working.... Starting JVMs using startManagedWebLogic script"
+    sh $Onboot_Home/JVM_STARTManaged.sh
+fi
+}
+
+startNode;
+startAdmin;
+startJVMs;
+
+---------------------------------------------------------
+[appadmin@SAMUATAPP1 onboot_scripts]$ cat varibales.properties
+ORACLE_HOME=/Weblogic12c/Oracle/Middleware/Oracle_Home/
+DOMAIN_HOME=/Weblogic12c/Oracle/Middleware/Oracle_Home/user_projects/domains/base_domain/
+Onboot_Home=/Weblogic12c/infra_scripts/onboot_scripts
+ADMIN_IP=10.191.157.14
+ADMIN_PORT=7001
+[appadmin@SAMUATAPP1 onboot_scripts]$
+
+-------------------------------------------------------------------------------------------------------------------------
+[appadmin@SAMUATAPP1 onboot_scripts]$ cat jvm.txt
+kony-1
+[appadmin@SAMUATAPP1 onboot_scripts]$
+
+-------------------------------------------------------------------------------------------------------------------------
+[appadmin@SAMUATAPP1 onboot_scripts]$
+[appadmin@SAMUATAPP1 onboot_scripts]$ cat jvm_start.py
+import threading, sys, time
+#adminURL="t3://`hostname -i`:7001"
+adminURL = 't3://10.191.157.14:7001'
+adminUser = 'konyadmin'
+adminPassword = 'V@ult$5678'
+adminServerName = 'AdminServer'
+
+try:
+    f = open("/Weblogic12c/infra_scripts/onboot_scripts/jvm.txt")
+    managedServers = []
+
+    for line in f:
+        line = line.strip()
+        if line:
+             managedServers.append(line)
+
+
+finally:
+        try:
+            f.close()
+        except:
+            pass
+print managedServers
+
+
+#with open("/Middleware/infra_scripts/onboot_scripts/jvm.txt") as f:
+ #   managedServers = [line.strip() for line in f if line.strip()]
+#    print(managedServers)
+def startManaged(serverName):
+    try:
+        print('>>> Starting ' + serverName)
+        start(serverName, 'Server', block='true')
+        print('>>> ' + serverName + ' started successfully.')
+    except:
+        print('!!! Failed to start ' + serverName)
+
+
+def startAdminServer():
+    try:
+        connect(adminUser, adminPassword, adminURL)
+        print('>>> AdminServer already running.')
+        return True
+    except:
+        print('>>> AdminServer not running, starting with startServer() ...')
+        try:
+            startServer(adminServerName, domainName=None, url=adminURL, username=adminUser, password=adminPassword)
+            print('>>> AdminServer started successfully.')
+            connect(adminUser, adminPassword, adminURL)
+            return True
+        except:
+            print('!!! Failed to start AdminServer.')
+            return False
+
+
+if startAdminServer():
+    threads = []
+    for server in managedServers:
+        t = threading.Thread(target=startManaged, args=(server,))
+        threads.append(t)
+        t.start()
+
+    for t in threads:
+        t.join()
+
+    disconnect()
+    exit()
+else:
+    print("!!! Could not start AdminServer. Exiting.")
+    sys.exit(1)
+
+[appadmin@SAMUATAPP1 onboot_scripts]$
+-------------------------------------------------------------------------------------------------------------------------
+[appadmin@SAMUATAPP1 onboot_scripts]$ cat jvm_stop.py
+#admin_url="t3://`hostname -i`:7001"
+admin_url = 't3://10.191.157.14:7001'
+admin_user = 'konyadmin'
+admin_pass = 'V@ult$5678'
+connect(admin_user, admin_pass, admin_url)
+
+#servers = ['console177a','Integration177a','Integration177b']
+
+try:
+    f = open("/Weblogic12c/infra_scripts/onboot_scripts/jvm.txt")
+    servers = []
+
+    for line in f:
+        line = line.strip()
+        if line:
+             servers.append(line)
+
+
+finally:
+        try:
+            f.close()
+        except:
+            pass
+print servers
+
+
+#with open("/Middleware/infra_scripts/onboot_scripts/jvm.txt") as f:
+#    servers = [line.strip() for line in f if line.strip()]
+#    print(servers)
+
+for server in servers:
+    print("\n>>> Stopping server: " + server)
+    try:
+        shutdown(server, 'Server', force='true', block='true')
+        print("Server " + server + " stopped successfully.")
+    except:
+        print("Failed to stop server: " + server)
+
+#print("\n>>> Stopping Admin server....")
+#shutdown('AdminServer', 'Server', force='true', block='true')
+#print("\n>>> Admin Server Stopped Successfully..... ")
+disconnect()
+exit()
+
+[appadmin@SAMUATAPP1 onboot_scripts]$
+
+-------------------------------------------------------------------------------------------------------------------------
+[appadmin@SAMUATAPP1 onboot_scripts]$ cat JVM_STARTManaged.sh
+source /Weblogic12c/infra_scripts/onboot_scripts/varibales.properties
+domain_home=$DOMAIN_HOME
+start_script="$DOMAIN_HOME/bin/startManagedWebLogic.sh"
+admin_url="t3://$ADMIN_HOST:$ADMIN_PORT"
+jvm_list_file="jvm.txt"
+
+if [ ! -f "$jvm_list_file" ]; then
+   echo "JVM list file '$jvm_list_file' not found !!"
+   exit 1
+fi
+
+echo " Starting all the JVMs.... "
+while read server_name; do
+  [[ -z  "$server_name" ]] && continue
+
+  echo " Starting $server_name ...."
+
+  nohup $start_script $server_name $admin_url > $Onboot_Home/$server_name.log 2>&1 &
+done < "$jvm_list_file"
+
+[appadmin@SAMUATAPP1 onboot_scripts]$
+
+-------------------------------------------------------------------------------------------------------------------------
+[appadmin@SAMUATAPP1 onboot_scripts]$ cat JVM_STOPManaged.sh
+source /Weblogic12c/infra_scripts/onboot_scripts/varibales.properties
+domain_home=$DOMAIN_HOME
+start_script="$DOMAIN_HOME/bin/stopManagedWebLogic.sh"
+admin_url="t3://$ADMIN_HOST:$ADMIN_PORT"
+jvm_list_file="jvm.txt"
+
+if [ ! -f "$jvm_list_file" ]; then
+   echo "JVM list file '$jvm_list_file' not found !!"
+   exit 1
+fi
+
+echo " Starting all the JVMs.... "
+while read server_name; do
+  [[ -z  "$server_name" ]] && continue
+
+  echo " Starting $server_name ...."
+
+  nohup $start_script $server_name $admin_url > $Onboot_Home/$server_name.log 2>&1 &
+done < "$jvm_list_file"
+[appadmin@SAMUATAPP1 onboot_scripts]$
+
+-------------------------------------------------------------------------------------------------------------------------
+
+[appadmin@SAMUATAPP1 onboot_scripts]$ cat StopAdminNode.sh
+source /Weblogic12c/infra_scripts/onboot_scripts/varibales.properties
+MAX_RETRIES=30
+SLEEP_SECONDS=2
+SUCCESS=false
+RED='\e[1;31m'
+GREEN='\033[0;32m'
+echo -e "${GREEN} Date: `date` ${CLEAR}\e[0m"
+echo -e "${RED} Domain Home Path : ${GREEN}  $DOMAIN_HOME ${CLEAR}\e[0m"
+echo -e "${RED} Oracle Home Path : ${GREEN} $ORACLE_HOME ${CLEAR}\e[0m"
+echo -e "${RED} Admin Host IP : ${GREEN} $ADMIN_IP ${CLEAR}\e[0m"
+echo -e "${RED} Admin Host Port : ${GREEN} $ADMIN_PORT ${CLEAR}\e[0m"
+echo -e "\n"
+
+echo -e "${RED} -------------------------------------------------------------------${CLEAR}\e[0m"
+
+for i in $(seq 1 $MAX_RETRIES); do
+    echo $ADMIN_IP;
+    echo $ADMIN_PORT;
+    echo "Attempt $i of $MAX_RETRIES: Checking $HOST port $PORT..."
+    if nc -zv -w 1 "$ADMIN_IP" "$ADMIN_PORT" &>/dev/null; then
+        echo -e "${GREEN} Connection successful! ..... ${CLEAR}\e[0m"
+        SUCCESS=true
+        break
+    else
+        echo "Connection failed. Retrying in $SLEEP_SECONDS seconds..."
+        sleep $SLEEP_SECONDS
+    fi
+done
+
+echo -e "${RED} ---------------------------------------------------------${CLEAR}\e[0m"
+
+
+startAdmin()
+{
+echo -e "${GREEN} Checking Admin Server is Up or NOT.... ${CLEAR}\e[0m"
+sleep 5
+admin=`ps -ef | grep Dweblogic.Name=AdminServer |grep -v grep|wc -l`
+if [ $admin -gt 0 ]; then
+        echo -e "${GREEN}  Admin Server is Up..... ${CLEAR}\e[0m"
+else
+        echo -e "${RED}  Admin is Down..... ${CLEAR}\e[0m"
+        echo -e "\n"
+        echo -e "${GREEN}  Starting Admin Server..... ${CLEAR}\e[0m"
+        nohup $DOMAIN_HOME/bin/startWebLogic.sh >> $DOMAIN_HOME/bin/Admin.log &
+fi
+}
+
+stopJVMs()
+{
+if [ "$SUCCESS" = true ]; then
+    echo -e "${GREEN} Connection successful!.. Stopping JVMs using wlst script ..... ${CLEAR}\e[0m"
+    $ORACLE_HOME/oracle_common/common/bin/wlst.sh $Onboot_Home/jvm_stop.py
+    echo -e "${GREEN} All the JVMs has been Stopped .... ${CLEAR}\e[0m"
+    echo -e "${RED} ---------------------------------------------------------${CLEAR}\e[0m"
+else
+         echo -e "${GREEN} Connection Not successful!.. Stopping JVMs using StopManaged script ..... ${CLEAR}\e[0m"
+         sh $Onboot_Home/JVM_STOPManaged.sh
+         sleep 10
+         echo -e "${GREEN} All the JVMs has been Stopped .... ${CLEAR}\e[0m"
+         echo -e "${RED} ---------------------------------------------------------${CLEAR}\e[0m"
+fi
+}
+
+stopNode()
+{
+echo -e "${GREEN} Stopping Node Manager.... ${CLEAR}\e[0m"
+     nohup $DOMAIN_HOME/bin/stopNodeManager.sh >> $DOMAIN_HOME/bin/nohup.out &
+sleep 5
+echo "Reconfirming Node Manager Status...!"
+value=`ps -ef| grep java |grep weblogic.NodeManager |grep -v grep |wc -l`
+if [ $value -eq 1 ]; then
+     echo -e "${GREEN}  NodeManager is Running..... ${CLEAR}\e[0m"
+else
+     echo -e "${RED}  NodeManager is Down..... ${CLEAR}\e[0m"
+echo -e "${RED} ---------------------------------------------------------${CLEAR}\e[0m"
+sleep 5
+fi
+}
+
+stopAdmin()
+{
+echo -e "${GREEN} Stopping Admin Server .... ${CLEAR}\e[0m"
+nohup $DOMAIN_HOME/bin/stopWebLogic.sh >> $DOMAIN_HOME/bin/nohup.out &
+sleep 30
+echo -e "${GREEN} Admin Server has been stopped ....!${CLEAR}\e[0m"
+echo -e "${RED} ---------------------------------------------------------${CLEAR}\e[0m"
+}
+startAdmin;
+stopJVMs;
+stopNode;
+stopAdmin;
+[appadmin@SAMUATAPP1 onboot_scripts]$
+
 
 
 ==========================================================================================================================================================================================================
