@@ -31,6 +31,28 @@ set wlst:
 [webadmin@sbiinbyluatapp1 konyadminUAT]$ java weblogic.WLST
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
+Packet Capture tcpdump on particular port:-
+
+
+sudo tcpdump -i any port 7777 -w /tmp/pe2_capture.pcap
+
+Meaning:
+	•	-i any = all interfaces
+	•	port 443 = only HTTPS traffic
+	•	-w = write capture file
+
+
+sudo tcpdump -i any -A port 7777 | grep -i Authorization
+
+sudo tcpdump -i any port 7463 -w /tmp/pe2_capture.pcap
+
+To read to dump file:-
+
+sudo tcpdump -nn -r /tmp/pe2_capture.pcap
+
+sudo tcpdump -A -r /tmp/pe2_capture.pcap | less
+
+-------------------------------------------------------------------------------------------------------------------------------------------
 
 Change weblogic console password :
 ===================================
