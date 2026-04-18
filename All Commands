@@ -30,7 +30,8 @@ set wlst:
 [webadmin@sbiinbyluatapp1 bin]$ . ./setDomainEnv.sh
 [webadmin@sbiinbyluatapp1 konyadminUAT]$ java weblogic.WLST
 ---------------------------------------------------------------------------------------------------------------------------------------
-Oracle WebLogic Driver
+Oracle WebLogic Driver while creating new data source:-
+@@@@@@@@@@
 *Oracle's Driver (Thin) for Service connections, Versions Any
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 Packet Capture tcpdump on particular port:-
