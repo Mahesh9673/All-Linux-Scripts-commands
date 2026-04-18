@@ -29,7 +29,9 @@ set wlst:
 ---------
 [webadmin@sbiinbyluatapp1 bin]$ . ./setDomainEnv.sh
 [webadmin@sbiinbyluatapp1 konyadminUAT]$ java weblogic.WLST
-
+---------------------------------------------------------------------------------------------------------------------------------------
+Oracle WebLogic Driver
+*Oracle's Driver (Thin) for Service connections, Versions Any
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 Packet Capture tcpdump on particular port:-
 
@@ -41,6 +43,19 @@ Meaning:
 	•	port 443 = only HTTPS traffic
 	•	-w = write capture file
 
+topdump -i ens192 dst 10.177.139.137 -w /tmp/"hostname'date +$d%m$Y-%H&М'•pcap
+
+tcpdump -i ens192 dst 10.177.139.137 -w /tmp/$(hostname)_$(date +%d%m%Y-%H%M).pcap
+
+
+
+Capture only port 7463 too:-
+sudo tcpdump -i any port 7001
+show HTTP headers if not encrypted:-
+sudo tcpdump -A -i any port 7001
+sudo tcpdump -nn -i any port 7001 (use -nn to read simple metadat)
+
+tcpdump -i ens192 dst 10.177.139.137 and port 7463 -w /tmp/$(hostname)_$(date +%d%m%Y-%H%M).pcap
 
 sudo tcpdump -i any -A port 7777 | grep -i Authorization
 
