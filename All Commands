@@ -184,7 +184,76 @@ Add crontab: crontab entry :
 
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------
+Python script to check DataSource Test Connection for WebLogic Servers:
+**********************************************************************
+[webadmin@SBIINBYLK9DRA1 onboot_scripts]$ cat testConn.py
+connect(
+userConfigFile='/Weblogic14c/infra_scripts/onboot_scripts/secure/userConfig.secure',
+userKeyFile='/Weblogic14c/infra_scripts/onboot_scripts/secure/userKey.secure',
+url='t3://10.177.80.121:7001'
+)
 
+serverConfig()
+servers = cmo.getServers()
+
+domainRuntime()
+
+print('======================================================================')
+print('%-20s %-12s %-25s %-15s' % ('SERVER', 'STATE', 'DATASOURCE', 'RESULT'))
+print('======================================================================')
+
+for server in servers:
+
+    serverName = server.getName()
+
+    try:
+        lc = getMBean('/ServerLifeCycleRuntimes/' + serverName)
+        state = lc.getState()
+
+    except:
+           state = 'UNKNOWN'
+
+    if state != 'RUNNING':
+        print('%-20s %-12s %-25s %-15s' % (serverName, state, '-', '-'))
+        continue
+
+    try:
+        jdbcBean = getMBean('/ServerRuntimes/' + serverName + '/JDBCServiceRuntime/' + serverName)
+
+        if jdbcBean is None:
+            print('%-20s %-12s %-25s %-15s' % (serverName, state, '-', 'NO JDBC RUNTIME'))
+            continue
+
+        dsList = jdbcBean.getJDBCDataSourceRuntimeMBeans()
+
+        if dsList is None or len(dsList) == 0:
+            print('%-20s %-12s %-25s %-15s' % (serverName, state, '-', 'NO DATASOURCE'))
+            continue
+
+        for ds in dsList:
+            dsName = ds.getName()
+
+            try:
+                ds.testPool()
+                result = 'SUCCESS'
+
+            except:
+                result = 'FAILED'
+
+            print('%-20s %-12s %-25s %-15s' % (serverName, state, dsName, result))
+
+    except:
+           print('%-20s %-12s %-25s %-15s' % (serverName, state, '-', 'RUNTIME ERROR'))
+
+print('======================================================================')
+
+disconnect()
+exit()
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
 scp -rp wasadmin@10.189.126.9:/WAS9/IBM/WebSphere/AppServer/profiles/AppSrv01/logs/retailmob9* .
 
 
