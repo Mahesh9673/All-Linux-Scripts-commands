@@ -25,6 +25,169 @@ print above and below lines :
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+Using port check JVM :-
+
+Jvm checking 
+netstat -Aan |grep 9476 
+rmsock f1000f00066b6bc0 tcpcb 
+ 
+For Linux app severs use below command 
+netstat -antp |grep 9572 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Create F.S mounpoint (lv, pv,vg)
+
+
+df -h
+vgs
+mkdir /OHS14c
+mkdir /Middleware14c
+lvcreate -L +50G -n lv_OHS14c rhel
+mkfs.ext4 /dev/mapper/rhel-lv_OHS14c
+mount /dev/mapper/rhel-lv_OHS14c /OHS14c
+lvcreate -L +50G -n lv_Middleware14c rhel
+mkfs.ext4 /dev/mapper/rhel-lv_Middleware14c
+mount /dev/mapper/rhel-lv_Middleware14c /Middleware14c/
+vi /etc/fstab (add entry of created above FS)
+df -h
+mount -a
+df -h
+-------------------------------------
+
+[root@SBIMBWAUATWEB01 ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Thu Oct 12 22:09:05 2017
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/rhel-root   /                       ext4    defaults        1 1
+UUID=9223b0ce-15f5-4116-bd60-64142e11950d /boot                   ext4    defaults        1 2
+/dev/mapper/rhel-home   /home                   ext4    defaults,nodev,nosuid        1 2
+/dev/mapper/rhel-opt    /opt                    ext4    defaults        1 2
+/dev/mapper/rhel-tmp    /tmp                    ext4    defaults,nodev,nosuid        1 2
+/dev/mapper/rhel-usr    /usr                    ext4    defaults        1 2
+/dev/mapper/rhel-var    /var                    ext4    defaults        1 2
+/dev/mapper/rhel-swap   swap                    swap    defaults        0 0
+/dev/mapper/rhel-OHS12c   /OHS12c               ext4    defaults        0 0
+/dev/mapper/rhel-logs    /logs                  ext4    defaults        0 0
+/dev/mapper/rhel-lv_OHS14c      /OHS14c         ext4    defaults        0 0
+/dev/mapper/rhel-lv_Middleware14c   /Middleware14c      ext4    defaults        0 0
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+Check connectivity FAR from ansible (source to destination):FAR ansible bash script:
+
+------------------------------
+[wasadmin@MOBANSIBLEPR01 FarCheck]$ pwd
+/home/wasadmin/scripts/Mahesh/FarCheck
+[wasadmin@MOBANSIBLEPR01 FarCheck]$
+[wasadmin@MOBANSIBLEPR01 FarCheck]$ ls -rlt
+total 16
+-rwxrwxrwx 1 wasadmin wasadmin 1429 Mar  8 09:05 WorkingFAR.sh
+-rwxrwxrwx 1 wasadmin wasadmin   25 Mar  8 09:21 ports.txt
+-rwxrwxrwx 1 wasadmin wasadmin   42 Mar  8 09:23 source_servers.txt
+-rwxrwxrwx 1 wasadmin wasadmin  177 Mar  8 09:23 dest_servers.txt
+[wasadmin@MOBANSIBLEPR01 FarCheck]$ cat WorkingFAR.sh
+#! /bin/bash
+
+
+# Colors for output
+GREEN="\033[1;32m"
+BOLD='\033[1m'
+RED="\033[1;31m"
+RESET="\033[0m"
+
+
+CheckFar()
+{
+        ports=`cat ports.txt`
+        source_servers=`cat source_servers.txt`
+        dest_servers=`cat dest_servers.txt`
+
+
+        SOURCES="${source_servers[@]}"
+        for SOURCE in $SOURCES;
+        do
+                echo "################################################################################################################"
+                echo -e "${BOLD}$SOURCE${RESET}"
+                DESTS="${dest_servers[*]}"
+                PORTS="${ports[*]}"
+                ssh -q appadmin@$SOURCE 'bash -s' <<EOF
+                ports=($PORTS)
+                dest_servers=($DESTS)
+                for DEST in "\${dest_servers[@]}";
+                do
+                        echo "===================================================="
+                        for PORT in "\${ports[@]}";
+                        do
+                                result=\$(nc -zv -w 2 \$DEST \$PORT 2>&1)
+                                if echo "\$result" | grep -q Connected; then
+                                        echo -e "${GREEN} \$DEST \$PORT Connected${RESET}"
+                                else
+                                        echo -e "${RED} \$DEST \$PORT \$result${RESET}"
+                                fi
+                        done
+                done
+EOF
+        done
+
+}
+
+CheckFar
+
+
+[wasadmin@MOBANSIBLEPR01 FarCheck]$
+[wasadmin@MOBANSIBLEPR01 FarCheck]$
+
+
+[wasadmin@MOBANSIBLEPR01 FarCheck]$
+[wasadmin@MOBANSIBLEPR01 FarCheck]$ cat ports.txt
+1522
+1523
+1524
+1525
+1526
+[wasadmin@MOBANSIBLEPR01 FarCheck]$
+[wasadmin@MOBANSIBLEPR01 FarCheck]$
+[wasadmin@MOBANSIBLEPR01 FarCheck]$ cat
+^C
+[wasadmin@MOBANSIBLEPR01 FarCheck]$ cat source_servers.txt
+10.176.42.196
+10.176.42.197
+10.176.42.198
+[wasadmin@MOBANSIBLEPR01 FarCheck]$
+[wasadmin@MOBANSIBLEPR01 FarCheck]$
+[wasadmin@MOBANSIBLEPR01 FarCheck]$
+[wasadmin@MOBANSIBLEPR01 FarCheck]$ cat dest_servers.txt
+10.191.137.89
+10.191.137.90
+10.191.137.91
+10.191.213.246
+10.191.213.247
+10.191.213.248
+10.191.213.249
+10.191.213.250
+10.191.213.251
+10.191.213.252
+10.191.213.253
+10.191.213.254
+[wasadmin@MOBANSIBLEPR01 FarCheck]$
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+for j in 10.191.66.{164..169}; do echo $j; ssh -q $j "for i in \`find /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/logs -name "SystemOut.log" -type f \`; do echo \$i; cat \$i | grep -B 5 "ORA-"; done"; done
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 set wlst:
 ---------
 [webadmin@sbiinbyluatapp1 bin]$ . ./setDomainEnv.sh
@@ -182,6 +345,68 @@ Add crontab: crontab entry :
 
                           systemctl restart crond.service
 
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+Httpd file parameters:-
+------------------------------
+<IfModule mpm_event_module>
+    StartServers             8
+    ServerLimit              64
+    MaxRequestWorkers        4096
+    ThreadLimit              64
+    ThreadsPerChild          64
+    MinSpareThreads          512
+    MaxSpareThreads          1024
+    MaxRequestsPerChild      0
+    Mutex fcntl:${ORACLE_INSTANCE}/servers/${COMPONENT_NAME}/logs
+</IfModule>
+
+-----------------------------
+
+
+StartServers 8             ------------------(When u start OHS it immediately creates 8 child processes)
+ThreadsPerChild   64        ------------------(each child gets 64 threads)
+
+Total Initial capacity =  StartServers * ThreadsPerChild
+                                    64 *  8 ====> 512  (At Startup OHS can handle 512 simultaneous requests.)
+
+
+                  E.g) If 600 users hit website:
+                                                 Initially 512 threads available. (remaiming 600-512===>88 requests)				  
+												 OHS sees thread shortage and creates new child processes.
+
+ServerLimit 64             ------------------(Maximum Child processes allowed 64. Currently 8 processes are running remaiming 56 OHS can create)
+
+
+Total Capacity = ThreadsPerChild * ServerLimit (64*64=4096 threads)
+
+MaxRequestWorkers 4096        ----------------(Maximum concurrent active requests = 4096) this matches = ServerLimit * ThreadsPerChild
+
+              E.g) 4500 users
+			         4096 will handled Remaining (4500-4096=404 requests  either 1)wait in queue
+					                                                             2)timeout
+																				 3)get rejected
+																		depends on backend behaviour.
+																		
+
+MinSpareThreads 512        --------------------( OHS always tries to keep at least 512 idle threads are ready.)		
+                                                Why ?
+                                                  Sudden traffic spike.
+												  E.g)----> traffic suddenly increases from 100-->500 users
+												         No need to creads threads immediately beacuse idle threads already exist.
+														 
+
+MaxSpareThreads 1024	------------------------- (if traffic drops and too many idle threads exist:
+																									OHS removes extra idle threads/processes
+																									
+																									E.g) traffic drops 30000---> 30 users
+																									No need to keep huge idle resources.
+																									
+MaxRequestPerChild 0  --------------------(Means Child process never start automatically)
+																		  E.g) child processes handles 10--100---1000-1 million requests  still continues.
+																		  
+       If set like 		MaxRequestPerChild 10000
+                                             -----------------(then after 10k requests processes restarts )  Useful for memory leak preventation.	   
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 Python script to check DataSource Test Connection for WebLogic Servers:
