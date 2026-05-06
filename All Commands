@@ -187,6 +187,40 @@ for j in 10.191.66.{164..169}; do echo $j; ssh -q $j "for i in \`find /opt/IBM/W
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Apply MQ Patch(Fixpack)
+
+Go to binary path:
+                  cd /opt/mqm/softwares/MQ_V9.3.0.0/FP_9.3.0.35
+                  unzip $binary.zip
+              Stop mqm:-
+                 endmqm -i SBIWAPR2
+                  switch to root
+                  sudo -i 
+                   cd /opt/mqm/softwares/MQ_V9.3.0.0/FP_9.3.0.35
+                     rpm -ivh MQSeries*.rpm
+                     dspmqver(check version details)
+
+                     start mq :-
+                     strmqm SBIWAPR2
+                     dspmq (check MQ Status)
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Get Private & public key from .pem certificate:
+
+
+
+openssl genpkey -algorithm ed25519 -out /IHS9/IBM/CERT_TOOL/DOMAIN/api.yonobusinessmobile.sbi/KY00503693_13-Dec-2021-16-01/api.yonobusinessmobile.sbi.pem && private_hex=$(openssl pkey -in /IHS9/IBM/CERT_TOOL/DOMAIN/api.yonobusinessmobile.sbi/KY00503693_13-Dec-2021-16-01/api.yonobusinessmobile.sbi.pem -outform DER | tail -c +17 | head -c 32| xxd -p -c 64)$(openssl pkey -in /IHS9/IBM/CERT_TOOL/DOMAIN/api.yonobusinessmobile.sbi/KY00503693_13-Dec-2021-16-01/api.yonobusinessmobile.sbi.pem -pubout -outform DER | tail -c 32 |xxd -p -c 64) && public_hex=$(openssl pkey -in /IHS9/IBM/CERT_TOOL/DOMAIN/api.yonobusinessmobile.sbi/KY00503693_13-Dec-2021-16-01/api.yonobusinessmobile.sbi.pem -pubout -outform DER | tail -c 32 | xxd -p -c 64) && echo "privateKey (hex): $private_hex" && echo "publicKey (hex): $public_hex"
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 set wlst:
 ---------
