@@ -26,6 +26,10 @@ print above and below lines :
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+To check ESTABLISHED, CLOSE_WAIT,TIME_WAIT  one line command:-
+
+while true; do WAIT_COUNT=`netstat -an |grep 10.177.139.137 |grep TIME_WAIT  |wc -l`; EST_COUNT=`netstat -an |grep 10.177.139.137 |grep EST  |wc -l`; CLOSE_COUNT=` netstat -an |grep 10.177.139.137 |grep CLOSE  |wc -l`; echo " $(date) | EST : ${EST_COUNT} | WAIT : ${WAIT_COUNT} | CLOSE : ${CLOSE_COUNT} "; sleep 1; done
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 Using port check JVM :-
 
