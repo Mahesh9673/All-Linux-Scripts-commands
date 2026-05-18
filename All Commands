@@ -989,7 +989,8 @@ check certificate:
        keytool -printcert -file  /opt/IBM/WebSphere/AppServer/profiles/jks/yonobusiness_sbi.cer
 	  
 ==========================================================================================================================================================================================================	  
-create wallet :
+==========================================================================================================================================================================================================	  
+create wallet : using auto_login (support OHS12c)
 -------------------
 /OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet create -wallet mobilewallet -pwd V@ult$5678 -auto_login
 
@@ -1002,6 +1003,35 @@ add cert & convert jks_to_pkcs12:
 Display Wallet:
 -----------------
 /OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet display -wallet "/OHS12c/Oracle/Middleware/user_projects/domains/base_domain/mobilewallet"
+
+check validity
+-------------
+/OHS12c/Oracle/Middleware/Oracle_Home/oracle_common/bin/orapki wallet export -wallet "/OHS12c/Oracle/Middleware/user_projects/domains/base_domain/mobilewallet" -dn 'CN=uat.whatsappmobility.sbi,O=STATE BANK OF INDIA,L=Navi Mumbai,ST=Maharashtra,C=IN,SERIALNUMBER=Government Entity,2.5.4.15=Government Entity,1.3.6.1.4.1.311.60.2.1.3=IN' -cert /tmp/bkp_24Apr2025.txt
+
+
+   openssl x509 -in /tmp/bkp_24Apr2025.txt -text -noout
+
+   openssl s_client  -showcerts  -connect 10.191.68.55:7002 | openssl x509 -text
+
+Command to check check expiry date using openssl tool
+       echo | openssl s_client -servername etoll.hellobankbank.com -connect etoll.hellobankbank.com:443 2>/dev/null | openssl x509 -noout -dates
+
+ 
+ ==========================================================================================================================================================================================================	  
+create wallet : using auto_login_only (support OHS14c)
+ 
+
+/Middleware14c/Oracle_Home/bin/orapki wallet create -wallet Automywallet -auto_login_only
+
+add cert & convert jks_to_pkcs12:
+--------------------------------------
+/Middleware14c/Oracle_Home/bin/orapki wallet jks_to_pkcs12 -wallet  /tmp/mahesh/Automywallet/ -keystore  /tmp/mahesh/uatmobilityquick.sbi.jks  -jkspwd adminsbi123
+
+Display Wallet:
+-----------------
+Middleware14c/Oracle_Home/bin/orapki wallet display -wallet /tmp/mahesh/Automywallet/
+
+
 
 check validity
 -------------
