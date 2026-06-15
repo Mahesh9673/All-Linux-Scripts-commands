@@ -375,7 +375,82 @@ nohup $domain_home/stopNodeManager.sh > $node_log 2>&1 &
 echo -e "${RED} Successfully Stopped the Node Manager. ${CLEAR}\e[0m"
 
 
---------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Provide sudo access to user:(using root user)
+-----------------------------------
+[root@SBIMBWAUATWEB01 ~]#
+[root@SBIMBWAUATWEB01 ~]# visudo  ---------------(Enter---->go to last & below entry for ur user)
+
+
+## Allow root to run any commands anywhere
+root    ALL=(ALL)       ALL
+addmitam ALL=(ALL) NOPASSWD: ALL
+SOCVA ALL=(ALL) NOPASSWD: ALL
+wasadmin ALL=(ALL) NOPASSWD: ALL
+osadmin ALL=(ALL) NOPASSWD: ALL
+webadmin ALL=(ALL) NOPASSWD: ALL
+ansible ALL=(ALL) NOPASSWD: ALL
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+WebLogic 14c Installtion:-
+--------------------------
+
+/Middleware15c/JAVA/bin/java -jar /Middleware15c/Binaries/fmw_15.1.1.0.0_wls_generic.jar -silent -responseFile /Middleware15c/Binaries/wls.rsp -invPtrLoc /Middleware15c/Binaries/oraInst.loc
+
+
+
+[webadmin@SAMUATAPP1 Binaries]$ cat wls.rsp
+[ENGINE]
+Response File Version=1.0.0.0.0
+[ENGINE]
+ORACLE_HOME=/Middleware15c/Oracle/Oracle_Home
+INSTALL_TYPE=WebLogic Server
+DECLINE_SECURITY_UPDATES=true
+SECURITY_UPDATES_VIA_MYORACLESUPPORT=false
+DECLINE_AUTO_UPDATES=true
+[webadmin@SAMUATAPP1 Binaries]$
+[webadmin@SAMUATAPP1 Binaries]$ cat oraInst.loc
+inst_group=webadmin
+inventory_loc=/Middleware15c/Oracle/oraInventory
+[webadmin@SAMUATAPP1 Binaries]$
+
+
+
+Domain Creation:
+---------------
+
+/Middleware15c/Oracle/Oracle_Home/oracle_common/common/bin/wlst.sh /Middleware15c/Binaries/domain.py
+
+
+[webadmin@SAMUATAPP1 Binaries]$ cat domain.py
+readTemplate('/Middleware15c/Oracle/Oracle_Home/wlserver/common/templates/wls/wls.jar')
+setOption('JavaHome', '/Middleware15c/JAVA')
+setOption('ServerStartMode', 'prod')
+cd('/Servers/AdminServer')
+set('ListenAddress', '10.191.157.14')
+set('ListenPort', 7004)
+cd('/Security/base_domain/User/weblogic')
+cmo.setPassword('V@ult$5678')
+writeDomain('/Weblogic15c/user_projects/domains/samadhaanUAT')
+closeTemplate()
+exit()
+set('ListenAddress', '10.191.157.14')
+set('ListenPort', 7004)
+[webadmin@SAMUATAPP1 Binaries]$
+[webadmin@SAMUATAPP1 Binaries]$
+
+Access console(Remote console) rconsole:-
+----------------------------------------
+
+/Middleware15c/Oracle/Oracle_Home/oracle_common/common/bin/wlst.sh /Middleware15c/Oracle/Oracle_Home/wlserver/server/bin/remote_console_deployment.py t3://10.191.157.14:7002 weblogic < /Middleware15c/Binaries/password.txt
+
+[webadmin@SAMUATAPP1 Binaries]$ cat /Middleware15c/Binaries/password.txt
+V@ult$5678
+[webadmin@SAMUATAPP1 Binaries]$
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 Add crontab: crontab entry :
