@@ -389,6 +389,87 @@ Add crontab: crontab entry :
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+OHS Installation (12c & 14c):-
+-----------------------------
+
+
+
+
+./fmw_14.1.2.0.0_ohs_linux64.bin -J-Djava.io.tmpdir=/Middleware14c/tmp/ -silent -responseFile /Middleware14c/Binaries/ohs.rsp -invPtrLoc /Middleware14c/Binaries/oraInst.loc -ignoreSysPrereqs
+
+
+[webadmin@SBIMBWAPRWEB01 Binaries]$ cat oraInst.loc
+inventory_loc=/Middleware14c
+inst_group=webadmin
+[webadmin@SBIMBWAPRWEB01 Binaries]$
+
+[webadmin@SBIMBWAPRWEB01 Binaries]$ cat ohs.rsp
+[ENGINE]
+Response File Version=14.1.2.0.0
+[GENERIC]
+ORACLE_HOME=/Middleware14c/Oracle_Home
+INSTALL_TYPE=Standalone HTTP Server (Managed independently of WebLogic server)
+DECLINE_SECURITY_UPDATES=true
+MYORACLESUPPORT_UNSERNAME=
+MYORACLESUPPORT_PASSWORD=
+DECLINE_SECURITY_UPDATES=true
+SECURITY_UPDATES_VIA_MYORACLESUPPORT=false
+PROXY_HOST=
+PROXY_PORT=
+PROXY_USER=
+PROXY_PWD=
+COLLECTOR_SUPPORTHUB_URL=
+[webadmin@SBIMBWAPRWEB01 Binaries]$
+
+
+Domain Creation:-
+--------------------------
+
+[webadmin@sbiinbyldevweb1 binary]$ cat domain.py
+OH ='/Middleware/Oracle_Home'
+domainName = 'kony_UAT'
+domainDir = '/OHS12c/user_projects/domains/kony_DEV'
+# Read OHS Standalone template 12.1.3
+readTemplate('/Middleware/Oracle_Home/wlserver/common/templates/wls/base_standalone.jar')
+addTemplate('/Middleware/Oracle_Home/ohs/common/templates/wls/ohs_standalone_template.jar')
+# Configure Nodemanager
+cd('/')
+create(domainName, 'SecurityConfiguration')
+cd('SecurityConfiguration/' + domainName)
+set('NodeManagerUsername', 'konyadmin')
+set('NodeManagerPasswordEncrypted', 'V@ult$5678')
+setOption('NodeManagerType', 'PerDomainNodeManager')
+cd('/Machines/localmachine/NodeManager/localmachine')
+cmo.setListenPort(5556)
+# Optional Steps:
+# The standalone OHS template already comes with an
+# out-of-the-box machine ('localmachine') and a single
+# instance of OHS ('ohs1') with default configuration
+# values. The remaining steps are needed only if the
+# out-of-the-box defaults need to be changed
+###############For Wifi configuration
+#cd('/OHS/ohs1')
+#cmo.setAdminHost('10.176.253.81')
+#cmo.setAdminPort('8453')
+#cmo.setListenAddress('10.176.253.81')
+#cmo.setListenPort('7452')
+#cmo.setSSLListenPort('7443')
+# create the domain
+writeDomain('/OHS12c/user_projects/domains/kony_DEV')
+closeTemplate()
+[webadmin@sbiinbyldevweb1 binary]$ pwd
+/Middleware/binary
+[webadmin@sbiinbyldevweb1 binary]$
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
 Httpd file parameters:-
 ------------------------------
 <IfModule mpm_event_module>
