@@ -443,11 +443,7 @@ setOption('NodeManagerType', 'PerDomainNodeManager')
 cd('/Machines/localmachine/NodeManager/localmachine')
 cmo.setListenPort(5556)
 # Optional Steps:
-# The standalone OHS template already comes with an
-# out-of-the-box machine ('localmachine') and a single
-# instance of OHS ('ohs1') with default configuration
-# values. The remaining steps are needed only if the
-# out-of-the-box defaults need to be changed
+# The standalone OHS template already comes with an out-of-the-box machine ('localmachine') and a single  instance of OHS ('ohs1') with default configuration values. The remaining steps are needed only if the out-of-the-box defaults need to be changed
 ###############For Wifi configuration
 #cd('/OHS/ohs1')
 #cmo.setAdminHost('10.176.253.81')
@@ -461,7 +457,27 @@ closeTemplate()
 [webadmin@sbiinbyldevweb1 binary]$ pwd
 /Middleware/binary
 [webadmin@sbiinbyldevweb1 binary]$
+---------------------------------------------------------------------------
+Domain Creation:-
+-----------------
 
+[webadmin@sbiinbyldevweb2 binary]$ cat domain2.py  |grep -v '#'
+OH ='/Middleware/Oracle_Home'
+domainName = 'kony_DEV'
+domainDir = '/OHS12c/user_projects/domains/kony_DEV'
+readTemplate('/Middleware/Oracle_Home/wlserver/common/templates/wls/base_standalone.jar')
+addTemplate('/Middleware/Oracle_Home/ohs/common/templates/wls/ohs_standalone_template.jar')
+cd('/')
+create(domainName, 'SecurityConfiguration')
+cd('SecurityConfiguration/' + domainName)
+set('NodeManagerUsername', 'konyadmin')
+set('NodeManagerPasswordEncrypted', 'V@ult$5678')
+setOption('NodeManagerType', 'PerDomainNodeManager')
+cd('/Machines/localmachine/NodeManager/localmachine')
+cmo.setListenPort(5556)
+writeDomain('/OHS12c/user_projects/domains/kony_DEV')
+closeTemplate()
+[webadmin@sbiinbyldevweb2 binary]$
 
 
 
