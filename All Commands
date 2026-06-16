@@ -2783,7 +2783,133 @@ ssh 10.176.35.241 "echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCkbORljhj40wti0df
 
 
 =================================================================================================================================================================
+Dockerfile for Weblogic installtion:-
+---------------------------------
 
+
+
+$ cat Dockerfile
+FROM registry.access.redhat.com/ubi9/ubi:latest
+
+RUN dnf install -y tar gzip unzip libaio && yum clean all
+
+RUN useradd -m oracle
+
+RUN mkdir -p /u01 && chown -R oracle:oracle /u01
+
+USER oracle
+WORKDIR /u01
+
+COPY jdk-21.0.11_linux-x64_bin.tar.gz .
+RUN tar -xzf jdk-21.0.11_linux-x64_bin.tar.gz && \
+    mv jdk-21.0.11 jdk
+#RUN tar -xvf jdk-21.0.11_linux-x64_bin.tar.gz && mv jdk-21* jdk
+
+ENV JAVA_HOME=/u01/jdk
+ENV PATH=$JAVA_HOME/bin:$PATH
+
+COPY fmw_15.1.1.0.0_wls_generic.jar .
+
+RUN mkdir -p /u01/oraInventory && \
+    echo "inventory_loc=/u01/oraInventory" > /u01/oraInst.loc && \
+        echo "inst_group=oracle" >> /u01/oraInst.loc && \
+        chmod 644 /u01/oraInst.loc
+
+RUN mkdir -p /u01/oracle
+
+RUN echo "[ENGINE]" > /u01/silent.rsp && \
+    echo "Response File Version=1.0.0.0.0" >>  /u01/silent.rsp && \
+        echo "[GENERIC]" >>  /u01/silent.rsp && \
+        echo "ORACLE_HOME=/u01/oracle" >>  /u01/silent.rsp && \
+        echo "INSTALL_TYPE=WebLogic Server" >>  /u01/silent.rsp && \
+        echo "DECLINE_SECURITY_UPDATES=true" >>  /u01/silent.rsp && \
+        java -jar fmw_15.1.1.0.0_wls_generic.jar \
+        -silent \
+        -responseFile /u01/silent.rsp \
+        -invPtrLoc /u01/oraInst.loc
+EXPOSE 7001
+CMD ["/bin/bash"]
+
+
+
+
+
+Dockerfile for OHS  installtion:-
+---------------------------------
+$ cat Dockerfile
+FROM registry.access.redhat.com/ubi9/ubi:latest
+
+RUN dnf install -y tar gzip unzip libaio && yum clean all
+
+RUN useradd -m oracle
+
+RUN mkdir -p /OHS15c && chown -R oracle:oracle /OHS15c
+
+USER oracle
+WORKDIR /OHS15c
+
+#COPY jdk-21.0.11_linux-x64_bin.tar.gz .
+#RUN tar -xzf jdk-21.0.11_linux-x64_bin.tar.gz && \
+#    mv jdk-21.0.11 jdk
+##RUN tar -xvf jdk-21.0.11_linux-x64_bin.tar.gz && mv jdk-21* jdk
+#
+#ENV JAVA_HOME=/OHS15c/jdk
+#ENV PATH=$JAVA_HOME/bin:$PATH
+
+COPY fmw_14.1.2.0.0_ohs_linux64.bin .
+
+RUN ./fmw_14.1.2.0.0_ohs_linux64.bin -help > /tmp/ohs-help.txt 2>&1 || true && \
+    cat /tmp/ohs-help.txt
+
+
+RUN mkdir -p /OHS15c/oraInventory && \
+    echo "inventory_loc=/OHS15c/oraInventory" > /OHS15c/oraInst.loc && \
+        echo "inst_group=oracle" >> /OHS15c/oraInst.loc && \
+        chmod 644 /OHS15c/oraInst.loc
+
+RUN mkdir -p /OHS15c/oracle
+
+RUN echo "[ENGINE]" > /OHS15c/silent.rsp && \
+    echo "Response File Version=14.1.2.0.0" >>  /OHS15c/silent.rsp && \
+    echo "[GENERIC]" >>  /OHS15c/silent.rsp && \
+    echo "ORACLE_HOME=/OHS15c/oracle" >>  /OHS15c/silent.rsp && \
+    echo "INSTALL_TYPE=Standalone HTTP Server (Managed independently of WebLogic server)" >> /OHS15c/silent.rsp && \
+    echo "DECLINE_SECURITY_UPDATES=true" >>  /OHS15c/silent.rsp && \
+    echo "MYORACLESUPPORT_UNSERNAME=" >>  /OHS15c/silent.rsp && \
+    echo "MYORACLESUPPORT_PASSWORD=" >>  /OHS15c/silent.rsp && \
+    echo "DECLINE_SECURITY_UPDATES=true" >>  /OHS15c/silent.rsp && \
+    echo "SECURITY_UPDATES_VIA_MYORACLESUPPORT=false" >>  /OHS15c/silent.rsp && \
+    echo "PROXY_HOST=" >>  /OHS15c/silent.rsp && \
+    echo "PROXY_PORT=" >>  /OHS15c/silent.rsp && \
+    echo "PROXY_USER=" >>  /OHS15c/silent.rsp && \
+    echo "PROXY_PWD=" >>  /OHS15c/silent.rsp && \
+    echo "COLLECTOR_SUPPORTHUB_URL=" >>  /OHS15c/silent.rsp && \
+
+    ./fmw_14.1.2.0.0_ohs_linux64.bin \
+    -silent \
+    -responseFile /OHS15c/silent.rsp \
+    -invPtrLoc /OHS15c/oraInst.loc \
+    -ignoreSysPrereqs
+EXPOSE 7443
+CMD ["/bin/bash"]
+
+
+
+
+Build docker :
+-----------------
+cd /c/Users/SBI/Mahesh/OHS14/build
+
+               docker build -t ohs_14c .
+
+
+cd /c/Users/SBI/Mahesh/WebLogic/build
+
+                  docker build -t weblogic_15c .
+
+
+
+=================================================================================================================================================================
 
 
 
