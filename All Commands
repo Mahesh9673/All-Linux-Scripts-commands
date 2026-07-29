@@ -275,6 +275,536 @@ sudo tcpdump -A -r /tmp/pe2_capture.pcap | less
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 
+Start Stop status for WAS JVM DMGR: WebSphere scripts start/stop/status etc.
+
+
+
+#!/bin/sh
+
+HOST=`hostname`
+WAS_INS_ROOT=/opt/IBM/WebSphere/AppServer
+NODE=$WAS_INS_ROOT/profiles/App*rv01/config/cells/${HOST}Cell01/nodes/${HOST}Node*
+NODE_NAME=`echo $NODE/ | cut -d/ -f12`
+CELL=$WAS_INS_ROOT/profiles/App*rv01/config/cells/*Cell01/
+CELL_NAME=`echo $CELL/  | cut -d/ -f10`
+JVM_LIST=`find  $WAS_INS_ROOT/profiles/App*rv01/config/cells/$CELL_NAME/nodes/$NODE_NAME/servers/ -type d |grep -v nodeagent | awk -F/ '{print $NF}'`
+DMGR_PID=`ps -ef | grep -v grep | grep dmgr | grep -v status.sh | grep -v WsServerStop | awk '{print $2}'`
+NODEAGENT_PID=`ps -ef | grep -v grep | grep nodeagent |grep -v status.sh | grep -v WsServerStop | awk '{print $2}'`
+#JVM_PID=`ps -ef | grep -v grep | grep -w $i | awk '{print $2}'`
+IHS_INS_ROOT=/IHS9/IBM/HTTPServer
+BYONO="YonobusinessA.conf"
+
+RED=$'\033[0;31m'          # Red
+GREEN=$'\033[0;32m'        # Green
+NC=$'\033[0m' # No Color
+
+i=1
+
+echo "#####################"
+echo "  $HOST     "
+echo "#####################"
+
+echo " "
+echo " "
+echo "Usage: startdmgr/startnodeagent/startappserver/startalljvms/startall/stopdmgr/stopnodeagent/stopappserver/stopalljvms/stopall/statusall"
+echo " "
+echo " "
+
+IHS_STATUS () {
+
+IHS_PID=`ps -ef | grep httpd | grep -v grep | grep -w $i |wc -l`
+
+                        if [ "${IHS_PID}" -eq "0" ]; then
+                        echo "$i IHS instance is ${RED}DOWN${NC}"
+                        else
+                        echo "$i IHS instance is ${GREEN} UP${NC}"
+                        fi
+
+                        }
+
+IHS_PID_CHK_START () {
+
+IHS_PID=`ps -ef | grep httpd | grep -v grep | grep -w $i | wc -l`
+
+                        if [ "${IHS_PID}" -eq 0 ]; then
+                        echo "$i IHS instance is ${RED}DOWN${NC}. Starting $i IHS instance"
+                         sudo ${IHS_INS_ROOT}/bin/apachectl -f ${IHS_INS_ROOT}/conf/$i -k start
+                        else
+                        echo "$i IHS instance is ${GREEN} already UP${NC}"
+                        fi
+
+                                        }
+
+IHS_PID_CHK_STOP () {
+
+IHS_PID=`ps -ef | grep httpd | grep -v grep |  grep -w $i |wc -l`
+
+                        if [ "${IHS_PID}" -ne 0 ]; then
+                        echo "$i IHS instance is ${GREEN} UP${NC}...Stopping $i IHS instance"
+                        sudo ${IHS_INS_ROOT}/bin/apachectl -f ${IHS_INS_ROOT}/conf/$i -k stop
+                        else
+                        echo "$i IHS instance is ${RED}already DOWN${NC}"
+                        fi
+
+                                        }
+
+
+case "$1" in
+
+syncnode)
+
+                   if [[ -d ${WAS_INS_ROOT}/profiles/Dmgr01 ]]
+                   then
+
+                   if [[ -z "${DMGR_PID}" ]]
+                   then
+                           echo " "
+                           echo "DMGR is ${RED}DOWN${NC}, Starting DMGR"
+                           echo " "
+
+                           $WAS_INS_ROOT/profiles/Dmgr01/bin/startManager.sh
+                           echo "${GREEN}Starting sync node on ${HOST}${NC}"
+                           $WAS_INS_ROOT/profiles/AppSrv01/bin/syncNode.sh $2 $3
+                    else
+                           echo " "
+                           echo "DMGR is ${GREEN}already UP${NC}"
+                           echo "${GREEN}Starting sync node on ${HOST}${NC}"
+                           $WAS_INS_ROOT/profiles/AppSrv01/bin/syncNode.sh $2 $3
+                           echo " "
+
+                    fi
+
+                else
+                           echo " ${RED}DMGR profile does not exist on server${NC}"
+                          echo "${GREEN}Starting sync node on ${HOST}${NC}"
+                          $WAS_INS_ROOT/profiles/AppSrv01/bin/syncNode.sh $2 $3
+                fi;;
+
+stopappserver)
+
+                    echo "List of jvms is mentioned below, Select appropriately"
+                    echo "$JVM_LIST" | xargs
+                    echo " "
+                    echo " "
+                    echo "Enter jvm name"
+                    read value
+
+                    for i in $value;
+
+                    do
+
+                        JVM_PID=`ps -ef | grep -v grep | grep -w $i | awk '{print $2}'`
+
+
+                    if [[ ! -z "${JVM_PID}" ]]
+                    then
+                    echo "$i is ${GREEN}UP${NC}, stopping $i"
+
+                    echo $i && $WAS_INS_ROOT/profiles/AppSrv01/bin/stopServer.sh $i &
+
+                    else
+
+                    echo "$i is ${RED}already DOWN${NC}"
+                    fi
+                    done;;
+
+  startappserver)
+
+                    echo "List of jvms is mentioned below, Select appropriately"
+                    echo "$JVM_LIST" | xargs
+                    echo " "
+                    echo " "
+
+                    echo "Enter jvm name"
+                    read value
+
+                    for i in $value;
+
+                    do
+                        JVM_PID=`ps -ef | grep -v grep | grep -w $i | awk '{print $2}'`
+
+
+                    if [[ -z "${JVM_PID}" ]]
+                    then
+                    echo "$i is ${RED}DOWN${NC}, Starting $i"
+
+                    echo $i && $WAS_INS_ROOT/profiles/AppSrv01/bin/startServer.sh $i
+
+                    else
+
+                    echo "$i is ${GREEN}already UP${NC}"
+                    fi
+                    done;;
+
+
+
+    startcustomjvm)
+
+        shift 1
+        for  i in $@ ; do
+        JVM_PID=`ps -ef | grep -v grep | grep -v status.sh | grep -v WsServerStop | grep -w $i | awk '{print $2}'`
+
+
+                    if [[ -z "${JVM_PID}" ]]
+                    then
+                    echo "$i is ${RED}DOWN${NC}, Starting $i"
+
+                    echo $i && $WAS_INS_ROOT/profiles/App*rv01/bin/startServer.sh $i
+
+                    else
+
+                    echo "$i is ${GREEN}already UP${NC}"
+                    fi
+                    done;;
+
+   stopcustomjvm)
+
+        shift 1
+        for  i in $@ ; do
+        JVM_PID=`ps -ef | grep -v grep | grep -v status.sh | grep -v WsServerStop | grep -w $i | awk '{print $2}'`
+
+        if [[ ! -z "${JVM_PID}" ]]
+        then
+                echo "$i is ${GREEN}UP${NC} .... Stopping $i"
+
+                echo $i && $WAS_INS_ROOT/profiles/App*rv01/bin/stopServer.sh $i
+
+        else
+
+                echo "$i is ${RED}already DOWN${NC}"
+
+        fi
+        done;;
+
+    statusall)
+
+           if [[ -d ${WAS_INS_ROOT}/profiles/Dmgr01 ]]
+           then
+
+           if [[ -z "${DMGR_PID}" ]]
+                    then
+                    echo "DMGR is ${RED}DOWN${NC}"
+
+           else
+
+                    echo "DMGR is ${GREEN}UP${NC}"
+
+           fi
+
+           else
+
+                echo " ${RED}DMGR profile does not exist on server${NC}"
+
+           fi
+
+                    if [[ -z "${NODEAGENT_PID}" ]]
+                    then
+                            echo "NODEAGENT is ${RED}DOWN${NC}"
+
+                    else
+
+                            echo "NODEAGENT is ${GREEN}UP${NC}"
+
+                    fi
+
+                                        for i in ${JVM_LIST}
+
+                                        do
+                                        JVM_PID=`ps -ef | grep -v grep | grep -v status.sh | grep -v WsServerStop | grep -v WsServerLauncher | grep -iv startserver | grep -w $i | awk '{print $2}'`
+
+                                        if [[ -z "${JVM_PID}" ]]
+                                        then
+                                        echo "$i is ${RED}DOWN${NC}"
+
+                                        else
+
+                                        echo "$i is ${GREEN}UP${NC}"
+                                        fi
+                    done;;
+
+
+
+
+    startdmgr)
+
+                                        if [[ -d ${WAS_INS_ROOT}/profiles/Dmgr01 ]]
+                                        then
+
+                    if [[ -z "${DMGR_PID}" ]]
+                    then
+                    echo " "
+                    echo "DMGR is ${RED}DOWN${NC}, Starting DMGR"
+                    echo " "
+
+                       $WAS_INS_ROOT/profiles/Dmgr01/bin/startManager.sh
+
+                    else
+                    echo " "
+                    echo "DMGR is ${GREEN}already UP${NC}"
+                    echo " "
+
+                    fi
+
+                                        else
+
+                                                echo " ${RED}DMGR profile does not exist on server${NC}"
+
+                                        fi;;
+
+
+    startnodeagent)
+
+
+                    if [[ -z "${NODEAGENT_PID}" ]]
+                    then
+                        echo "NODEAGENT is ${RED}DOWN${NC}, Starting NODEAGENT"
+
+                        $WAS_INS_ROOT/profiles/App*rv01/bin/startNode.sh
+
+                    else
+
+                        echo "NODEAGENT is ${GREEN}already UP${NC}"
+
+                    fi ;;
+
+
+    startalljvms)
+                    for i in ${JVM_LIST}
+
+                    do
+
+                    JVM_PID=`ps -ef | grep -v grep | grep -v status.sh | grep -v WsServerStop | grep -w $i | awk '{print $2}'`
+
+                    if [[ -z "${JVM_PID}" ]]
+                    then
+                    echo "$i is ${RED}DOWN${NC}, Starting $i"
+
+                    echo $i && $WAS_INS_ROOT/profiles/App*rv01/bin/startServer.sh $i &
+
+                    else
+
+                    echo "$i is ${GREEN}already UP${NC}"
+                    fi
+                    done;;
+
+    startall)
+
+                                        if [[ -d ${WAS_INS_ROOT}/profiles/Dmgr01 ]]
+                                        then
+                    if [[ -z "${DMGR_PID}" ]]
+                    then
+                    echo "DMGR is in stopped state, Starting DMGR"
+
+                               $WAS_INS_ROOT/profiles/Dmgr01/bin/startManager.sh
+
+                    else
+
+                    echo "DMGR is ${GREEN}already UP${NC}"
+
+                    fi
+
+                                        else
+
+                                                echo " ${RED}DMGR profile does not exist on server${NC}"
+
+                                        fi
+
+
+                    if [[ -z "${NODEAGENT_PID}" ]]
+                    then
+                    echo "NODEAGENT is ${RED}DOWN${NC}, Starting NODEAGENT"
+
+                       $WAS_INS_ROOT/profiles/App*rv01/bin/startNode.sh
+
+                        else
+
+                    echo "NODEAGENT is ${GREEN}already UP${NC}"
+
+                    fi
+
+
+                    for i in ${JVM_LIST}
+
+                    do
+
+                        JVM_PID=`ps -ef | grep -v grep | grep -v status.sh | grep -v WsServerStop | grep -w $i | awk '{print $2}'`
+
+                    if [[ -z "${JVM_PID}" ]]
+                    then
+
+                         echo "$i is ${RED}DOWN${NC}, Starting $i"
+                         echo $i && $WAS_INS_ROOT/profiles/App*rv01/bin/startServer.sh $i &
+
+                    else
+
+                         echo "$i is ${GREEN}already UP${NC}"
+
+                    fi
+
+                    done
+
+                for i in `echo "$BYONO"`; do
+                  IHS_PID_CHK_START
+                   done;;
+
+
+
+
+
+    stopdmgr)
+
+                                        if [[ -d ${WAS_INS_ROOT}/profiles/Dmgr01 ]]
+                                        then
+
+                    if [[ ! -z "${DMGR_PID}" ]]
+                    then
+                         echo "DMGR is ${GREEN}UP${NC}, stopping DMGR"
+
+                         $WAS_INS_ROOT/profiles/Dmgr01/bin/stopManager.sh
+
+                    else
+
+                            echo "DMGR is ${RED}already DOWN${NC}"
+
+                    fi
+                                        else
+
+                                                echo " ${RED}DMGR profile does not exist on server${NC}"
+
+                                        fi;;
+
+
+
+
+        stopnodeagent)
+
+
+                    if [[ ! -z "${NODEAGENT_PID}" ]]
+                    then
+                        echo "NODEAGENT is ${GREEN}UP${NC}, stopping NODEAGENT"
+
+                        $WAS_INS_ROOT/profiles/App*rv01/bin/stopNode.sh
+
+                    else
+
+                    echo "NODEAGENT is ${RED}already DOWN${NC}"
+
+                    fi ;;
+
+
+    stopalljvms)
+
+
+                    for i in ${JVM_LIST}
+
+                    do
+
+                        JVM_PID=`ps -ef | grep -v grep | grep -v status.sh | grep -v WsServerStop | grep -w $i | awk '{print $2}'`
+
+
+                    if [[ ! -z "${JVM_PID}" ]]
+                    then
+                        echo "$i is ${GREEN}UP${NC}, stopping $i"
+
+                        echo $i && $WAS_INS_ROOT/profiles/App*rv01/bin/stopServer.sh $i &
+
+                    else
+
+                        echo "$i is ${RED}already DOWN${NC}"
+                    fi
+                    done;;
+
+    stopall)
+
+
+                    for i in ${JVM_LIST}
+
+                    do
+
+                        JVM_PID=`ps -ef | grep -v grep | grep -v status.sh | grep -v WsServerStop | grep -w $i | awk '{print $2}'`
+
+                    if [[ ! -z "${JVM_PID}" ]]
+                    then
+
+                        echo "$i is ${GREEN}UP${NC}, stopping $i"
+                        echo $i && $WAS_INS_ROOT/profiles/App*rv01/bin/stopServer.sh $i &
+
+                    else
+
+                        echo "$i is ${RED}already DOWN${NC}"
+
+                    fi
+                    done
+
+                    if [[ ! -z "${NODEAGENT_PID}" ]]
+                    then
+
+                         echo "NODEAGENT is ${GREEN}UP${NC}, stopping NODEAGENT"
+                         $WAS_INS_ROOT/profiles/App*rv01/bin/stopNode.sh
+
+                    else
+
+                    echo "NODEAGENT is ${RED}already DOWN${NC}"
+
+                    fi
+
+
+                if [[ -d ${WAS_INS_ROOT}/profiles/Dmgr01 ]]
+                                        then
+                    if [[ ! -z "${DMGR_PID}" ]]
+                    then
+                        echo "DMGR is ${GREEN}UP${NC}, stopping DMGR"
+
+                        $WAS_INS_ROOT/profiles/Dmgr01/bin/stopManager.sh
+
+                    else
+
+                         echo "DMGR is ${RED}already DOWN${NC}"
+
+                    fi
+
+                        else
+
+                                echo " ${RED}DMGR profile does not exist on server${NC}"
+
+                        fi
+
+                for i in `echo "$BYONO"`; do
+                IHS_PID_CHK_STOP
+                   done;;
+
+                BYONOSTATUS)
+
+          for i in `echo "$BYONO"`; do
+                  IHS_STATUS
+                   done;;
+
+        BYONOSTART)
+
+          for i in `echo "$BYONO"`; do
+                  IHS_PID_CHK_START
+                   done;;
+
+        BYONOSTOP)
+
+          for i in `echo "$BYONO"`; do
+                IHS_PID_CHK_STOP
+                   done;;
+
+    *) echo "Invalid $1 argument passed"
+
+
+esac
+
+echo "##########################################################################"
+echo " "
+echo " "
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 Change weblogic console password :
 ===================================
 
