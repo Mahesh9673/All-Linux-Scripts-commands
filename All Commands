@@ -195,6 +195,113 @@ for j in 10.191.66.{164..169}; do echo $j; ssh -q $j "for i in \`find /opt/IBM/W
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+
+WebSphere Installation:- (WAS Installation )
+*****************************
+DMGR,profile,Node creation,addNode ,syncNode,passwordless etc.
+
+
+Install WAS & IM:
+
+
+#!/bin/bash
+cd /opt/IBM
+echo "*******************************************************************************************"
+chmod -R 775 /opt/IBM/automate/
+sleep 10;
+echo "*******************************************************************************************"
+echo "Installing installation Manager"
+/opt/IBM/automate/IM/userinstc -installationDirectory /opt/IBM/InstallationManager -acceptLicense -sP;
+sleep 150
+echo "Installing WAS9 on the servers"
+echo "*******************************************************************************************"
+/opt/IBM/InstallationManager/eclipse/tools/imcl install com.ibm.websphere.ND.v90_9.0.5001.20190828_0616 com.ibm.java.jdk.v8_8.0.8030.20240801_0349 -repositories /opt/IBM/automate/WASBase/,/opt/IBM/automate/JAVA_8.0.8.30/ -installationDirectory /opt/IBM/WebSphere/AppServer/ -sharedResourcesDirectory "/opt/IBM/IMShared" -acceptLicense -sP;
+sleep 20;
+chown -R wasadmin:was /opt/IBM/
+sleep 20
+chmod -R 755 /opt/IBM/
+
+-------------------------------------------------------
+
+create profile:
+cd /opt/IBM/WebSphere/AppServer/bin
+./manageprofiles.sh -create -profileName Dmgr01 -profilePath /opt/IBM/WebSphere/AppServer/profiles/Dmgr01 -templatePath /opt/IBM/WebSphere/AppServer/profileTemplates/management -serverType DEPLOYMENT_MANAGER -enableAdminSecurity true -adminUserName wasadmin -adminPassword W@sprodmob123
+
+profile logfile:
+less /opt/IBM/WebSphere/AppServer/profiles/Dmgr01/logs/AboutThisProfile.txt
+---------------------------------------------------------------------------------------------
+create Node:
+cd /opt/IBM/WebSphere/AppServer/profiles/
+./manageprofiles.sh -create -profileName AppSrv01 -profilePath /opt/IBM/WebSphere/AppServer/profiles/AppSrv01 -templatePath /opt/IBM/WebSphere/AppServer/profileTemplates/default
+
+---------------------------------------------------------------------------------------------
+start DMGR:
+cd /opt/IBM/WebSphere/AppServer/profiles/Dmgr01/bin
+./startServer.sh dmgr
+
+OR  ./startManager.sh
+
+--------------------------------------------------------------------------------------------
+Add node to DMGR server:
+cd /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/bin/
+./addNode.sh SBIINBYLPRBAPP01 8879
+
+logfile : less /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/logs/AboutThisProfile.txt
+
+------------------------------------------------------------------------------------------
+sync node to DMGR:
+cd /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/bin/
+./syncNode.sh  SBIINBYLPRBAPP01 8879
+
+it will ask username & password to sync
+-----------------------------
+Sync Node Passwordless
+cd /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/properties
+
+change below 2 properties file:
+take backup before changing below files.
+1)ipc.client.props                                                       2)soap.client.props 
+
+com.ibm.IPC.securityEnabled=false---->true                                   com.ibm.SOAP.securityEnabled=false---------true
+com.ibm.IPC.loginUserid={username}                                           com.ibm.SOAP.loginUserid={username}   
+com.ibm.IPC.loginPassword={password}                                         com.ibm.SOAP.loginPassword={password}
+
+--------------------------------------------------------------------------------------------------------------------------------------
+And then use below two commands to encrypt usename & password(Above we provide username & password in plain text)
+
+cd /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/bin
+./PropFilePasswordEncoder.sh /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/properties/ipc.client.props com.ibm.IPC.loginPassword -noBackup
+./PropFilePasswordEncoder.sh /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/properties/soap.client.props com.ibm.SOAP.loginPassword -noBackup
+
+-----------------------------------------------------------
+same for DMGR also
+cd /opt/IBM/WebSphere/AppServer/profiles/DMGR01/properties
+take backup before changing below files.
+1)ipc.client.props                                                       2)soap.client.props 
+
+com.ibm.IPC.securityEnabled=false---->true                                   com.ibm.SOAP.securityEnabled=false---------true
+com.ibm.IPC.loginUserid={username}                                           com.ibm.SOAP.loginUserid={username}   
+com.ibm.IPC.loginPassword={password}                                         com.ibm.SOAP.loginPassword={password}
+
+encrypt username & password
+cd /opt/IBM/WebSphere/AppServer/profiles/DMGR01/bin
+./PropFilePasswordEncoder.sh /opt/IBM/WebSphere/AppServer/profiles/DMGR01/properties/ipc.client.props com.ibm.IPC.loginPassword -noBackup
+./PropFilePasswordEncoder.sh /opt/IBM/WebSphere/AppServer/profiles/DMGR01/properties/soap.client.props com.ibm.SOAP.loginPassword -noBackup
+
+then go to path 
+cd /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/bin
+./syncNode.sh SBIINBYLPRBAPP01 8879      {this time it will not ask for password}
+
+Above same process complete on remaining nodes.
+
+
+
+{   NOTE : when we run the syncnode it will sync files inside  config folders.
+               e.g /opt/IBM/WebSphere/AppServer/profiles/Dmgr01/config                         }
+
+
+
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Apply MQ Patch(Fixpack)
