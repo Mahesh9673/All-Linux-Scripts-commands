@@ -25,6 +25,19 @@ print above and below lines :
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
+If WebLogic automatically stopped/killed:
+
+check below commands:
+                sudo dmesg -T | grep -iE "oom|out of memory|killed process" 
+
+                sudo journalctl -k |grep -iE "oom|out of memory|killed process"
+
+If you obseved then Linux OOM Killer is killed WebLogic.(Linux Server ran out of available memory)
+
+kills using SIGKILL (9)
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 To check ESTABLISHED, CLOSE_WAIT,TIME_WAIT  one line command:-
 
