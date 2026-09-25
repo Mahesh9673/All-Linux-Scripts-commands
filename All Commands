@@ -24,6 +24,38 @@ print above and below lines :
                           cat /backup1/SBI_MCB1_Logs/log4jInfo.log | grep -a10 SBISQ25190121637146184134
 
 
+
+
+Commands:
+
+Anisble:
+
+for i in 10.189.250.{150..153}; do echo $i ; ssh -q webadmin@$i "ps -ef | grep httpd | grep -v grep | awk '{print \$NF}' | sort -u | sed 's/httpd/ssl/g' | xargs grep -i Listen | grep -v '#'"; done
+
+
+grep CustomLog ssl.conf | grep -v "#" | awk -F'rotatelogs' '{if(NF>1) print $2}' | awk '{print $1}'  |  awk 'match($0, /.*ohs1/) {print substr($0,RSTART,RLENGTH)}'
+
+
+Log formatting in OHS & WebLogic (Custom Log format)
+
+ssl.conf ------->  
+CustomLog "|${PRODUCT_HOME}/bin/rotatelogs /logs/ohs1/ssl_request_log.%Y%m%d%H%M%S 28800" "%t %{x-forwarded-for}i LB=%h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b %s %{Host}i \"%{Referer}i\" \"%{User-Agent}i\""
+
+CustomLog "|${PRODUCT_HOME}/bin/rotatelogs /logs/ohs1/ssl_request_log.%Y%m%d%H%M%S 28800" "%t %{x-forwarded-for}i LB=%h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b %s %{Host}i \"%{Referer}i\" \"%{User-Agent}i\" \"%{WLS_ROUTED_SERVER}n\" \"%{WLS_DYNAMIC_ROUTING_INFO}n\" %D"
+
+CustomLog "||${PRODUCT_HOME}/bin/rotatelogs /logs/${COMPONENT_NAME}/ssl_request_log.%Y%m%d%H%M%S 28800" "%t %h %u \"%m %U %q %H\" %>s %b \"%{Referer}i\" \"%{User-agent}i\" %A %{X-Forwarded-For}i %T %{X-RequestID}i %{X-Request-ID}o %{local}p LB=%h %{SSL_PROTOCOL}x %{SSL_CIPHER}x %{Host}i"
+
+
+WebLogic--->
+Server-->logging-->General-->Advanced---> Date Format Pattern (MMM d, yyyy h:mm:ss,SSS a z)
+                                Log File Buffer (provide 0 for contioneous logs rolling)
+
+
+Server-->logging-->HTTP-->Advanced---> Format (Extended)
+                                      Extended Logging Format Fields: c-ip s-ip date time cs-method cs-uri sc-status bytes cs(X-Forwarded-For) time-taken cs(webserver-ip)
+                                      Log File Buffer:(provide 0 for contioneous logs rolling)
+
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 If WebLogic automatically stopped/killed:
 
