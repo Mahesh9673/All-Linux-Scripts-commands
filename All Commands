@@ -11,6 +11,12 @@ Curl command:-(generate 100 requests)
 for i in $(seq 1 100); do   curl -s -o /dev/null \     -w "Request $i: HTTP %{http_code}, Time %{time_total}s\n" \     https://172.17.0.2:9002/ done
 
 
+================================================================================================================================================================================
+Generate CSR with SAN Name:
+
+openssl req -new -newkey rsa:2048 -nodes -keyout ipostp.sbiuat.bank.in.key -out ipostp.sbiuat.bank.in.csr -subj "/C=IN/ST=Maharashtra/L=Mumbai/O=Sate Bank Of India/OU=INTERNET BANKING DEPARTMENT/CN=ipostp.sbiuat.bank.in" -addext "subjectAltName=DNS:ipostp.sbiuat.bank.in,DNS:www.ipostp.sbiuat.bank.in"
+
+================================================================================================================================================================================
 
 To search bz logs
  find . -type f -name "*access-ssl.log.20220503*.bz2" -exec bzgrep -i "122.170.13.95" {} \; -print
