@@ -1,1 +1,134 @@
 
+Step 1:
+first of all create a key :
+
+                        openssl genrsa -out mahesh.key 2048
+
+[wasadmin@ee6cd08c9462 SSL]$ ls -lrt
+total 4
+-rw------- 1 wasadmin wasadmin 1704 Nov  5 15:08 mahesh.key
+
+Step 2:
+using above key create a CSR:
+
+                         openssl req -new -key mahesh.key -out mahesh.csr
+   
+
+(it will ask all the details. provide & enter)
+
+[wasadmin@ee6cd08c9462 SSL]$ openssl req -new -key mahesh.key -out mahesh.csr
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [XX]:91
+State or Province Name (full name) []:Maharashtra
+Locality Name (eg, city) [Default City]:Mumabi
+Organization Name (eg, company) [Default Company Ltd]:TCS
+Organizational Unit Name (eg, section) []:CBS
+Common Name (eg, your name or your server's hostname) []:api.mahesh.com
+Email Address []:maheshd18@outlook.com
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:adminsbi123
+An optional company name []:
+[wasadmin@ee6cd08c9462 SSL]$ ls -lrt
+total 8
+-rw------- 1 wasadmin wasadmin 1704 Nov  5 15:08 mahesh.key
+-rw-r--r-- 1 wasadmin wasadmin 1098 Nov  5 15:10 mahesh.csr
+[wasadmin@ee6cd08c9462 SSL]$
+
+
+Step 3:
+Verity the CSR:
+                   openssl req -in mahesh.csr -noout -text
+
+Step 4: 
+Send Above CSR to client , they will provide CA signed Certificate.
+
+Step 5:
+    Take All the CA signed Ceritificate from Client.(Server,root & inter[if present])
+    Save in file. just like below
+
+[wasadmin@ee6cd08c9462 SSL]$ ls -lrt
+total 16
+-rw------- 1 wasadmin wasadmin 1704 Nov  5 15:08 mahesh.key
+-rw-r--r-- 1 wasadmin wasadmin 1098 Nov  5 15:10 mahesh.csr
+-rw-r--r-- 1 wasadmin wasadmin 1777 Nov  5 15:17 api.mahesh.cer
+-rw-r--r-- 1 wasadmin wasadmin 2000 Nov  5 15:17 root.cer
+[wasadmin@ee6cd08c9462 SSL]$
+
+Step 6:
+Verify Private Key & Server Certificate. (match the md5 values)
+
+[wasadmin@ee6cd08c9462 SSL]$ openssl rsa -noout -modulus -in mahesh.key  | openssl md5
+MD5(stdin)= 069243eaa49a96e82ef3598bed874392
+[wasadmin@ee6cd08c9462 SSL]$
+
+
+[wasadmin@ee6cd08c9462 SSL]$ openssl x509 -noout -modulus -in api.mahesh.cer  | openssl md5
+MD5(stdin)= 069243eaa49a96e82ef3598bed874392
+[wasadmin@ee6cd08c9462 SSL]$
+[wasadmin@ee6cd08c9462 SSL]$
+
+
+If u see above both md5 values are matched.
+
+Step 7:
+Create a certificate chain ( if u have root & inter)
+cat inter.cer root.cer > chain.cer
+
+If only u have root then no need to create chain.
+
+
+Step 8:
+Create .p12
+
+               [wasadmin@ee6cd08c9462 SSL]$ openssl pkcs12 -export -inkey mahesh.key -in api.mahesh.cer -name api.mahesh -out api.mahesh.p12
+               Enter Export Password:
+               Verifying - Enter Export Password:
+
+Here name is alias & provide password.
+
+[wasadmin@ee6cd08c9462 SSL]$ ls -lrt
+total 20
+-rw------- 1 wasadmin wasadmin 1704 Nov  5 15:08 mahesh.key
+-rw-r--r-- 1 wasadmin wasadmin 1098 Nov  5 15:10 mahesh.csr
+-rw-r--r-- 1 wasadmin wasadmin 1777 Nov  5 15:17 api.mahesh.cer
+-rw-r--r-- 1 wasadmin wasadmin 2000 Nov  5 15:17 root.cer
+-rw------- 1 wasadmin wasadmin 3112 Nov  5 15:32 api.mahesh.p12
+[wasadmin@ee6cd08c9462 SSL]$
+
+Step 9:
+Verify .p12
+                [wasadmin@ee6cd08c9462 SSL]$ openssl pkcs12 -info -in api.mahesh.p12
+                    Enter Import Password:
+
+                 [wasadmin@ee6cd08c9462 SSL]$ openssl pkcs12 -in api.mahesh.p12 -clcerts -nokeys |openssl x509 -noout -dates
+                  Enter Import Password:
+                  notBefore=Nov  5 15:14:11 2026 GMT
+                  notAfter=Dec  5 15:14:11 2026 GMT
+                [wasadmin@ee6cd08c9462 SSL]$
+
+
+Step 10:
+Convert.p12 into .jks
+
+[wasadmin@ee6cd08c9462 SSL]$ keytool -importkeystore -srckeystore api.mahesh.p12 -srcstoretype PKCS12 -destkeystore api.mahesh.jks -deststoretype JKS
+
+It will ak for password dest & source keystore (Enter the pasword >> jks will be created.)
+
+Step 11:
+Verify the jks.
+
+                   keytool -list -v -keystore api.mahesh.jks 
+
+Step 11:
+Using p12 we can create KDB, Wallet etc.
+
+
+
