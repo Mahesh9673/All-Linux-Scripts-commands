@@ -92,6 +92,9 @@ Create .p12
                Enter Export Password:
                Verifying - Enter Export Password:
 
+Chain :   openssl pkcs12 -export -out certificate.p12 -inkey private.key -in server.crt -certfile chain.crt
+
+
 Here name is alias & provide password.
 
 [wasadmin@ee6cd08c9462 SSL]$ ls -lrt
